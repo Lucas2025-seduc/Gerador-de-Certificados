@@ -427,9 +427,9 @@
                             <div class="w-full flex flex-col items-center justify-center gap-2 px-4">
                                 <h2 id="display-studentName" class="font-black leading-tight break-words-custom uppercase m-0 w-full text-[26px]">NOME DO ALUNO</h2>
                                 <div class="w-full flex flex-col items-center gap-2">
-                                    <p id="cert-main-text" class="text-[17px] leading-tight opacity-95 m-0 font-medium">Portador(a) do CPF <strong id="display-studentId" class="font-bold">---</strong>, concluiu com êxito o programa de</p>
+                                    <p id="cert-main-text" class="text-[17px] leading-tight opacity-95 m-0 font-medium">Portador(a) do CPF <strong id="display-studentId" class="font-bold">---</strong>, concluiu com êxito o <span id="display-courseType">curso</span> de</p>
                                     <h3 id="display-courseName" class="font-black uppercase text-[26px] leading-tight transition-colors m-0 break-words-custom w-full max-w-[90%]">NOME DO CURSO</h3>
-                                    <p id="cert-duration-text" class="text-[17px] leading-tight opacity-95 m-0 font-medium">realizado no período de <strong id="display-startDate">---</strong> a <strong id="display-endDate">---</strong>, <br> totalizando uma carga horária de <strong id="display-hours">---</strong> horas.</p>
+                                    <p id="cert-duration-text" class="text-[17px] leading-tight opacity-95 m-0 font-medium">concluído em <strong id="display-endDate">---</strong>, <br> totalizando uma carga horária de <strong id="display-hours">---</strong> horas.</p>
                                 </div>
                             </div>
                         </main>
@@ -503,7 +503,7 @@
                                       <h4 id="audit-header" class="text-xs font-black uppercase border-b border-slate-200 pb-2 m-0 tracking-widest">Audit de Registro</h4>
                                       <div class="grid grid-cols-1 gap-2 text-center text-slate-800">
                                         <div class="bg-slate-50 p-4 rounded-xl border-b-2 border-slate-300">
-                                          <span class="text-[8px] font-black block opacity-40 uppercase mb-1">Nº de Registro do Lote</span>
+                                          <span class="text-[8px] font-black block opacity-40 uppercase mb-1">Nº de Registro de Certificado</span>
                                           <span id="display-regNum" class="text-sm font-black uppercase tracking-widest">---</span>
                                         </div>
                                         <div class="bg-slate-50 p-3 rounded-xl border-b-2 border-slate-300 flex flex-col items-center">
@@ -649,7 +649,7 @@
             data: {
                 studentName: 'NOME COMPLETO DO ALUNO PARA CERTIFICAÇÃO', studentId: '000.000.000-00', 
                 courseName: 'ENGENHARIA DE SOFTWARE E INTELIGÊNCIA ARTIFICIAL', hours: '360',
-                startDate: '01/01/2025', endDate: '30/06/2025', date: new Date().toLocaleDateString('pt-BR'),
+                endDate: '30/06/2025', date: new Date().toLocaleDateString('pt-BR'),
                 company: 'CENTRO NACIONAL DE ENSINO E TECNOLOGIA', cnpj: '12.345.678/0001-90',
                 address: 'Av. Paulista, 2000 - Bela Vista, São Paulo - SP', location: 'São Paulo - SP',
                 instructor: 'DR. ANTÔNIO JOSÉ SILVA', instructorTitle: 'Diretor Geral de Ensino',
@@ -658,7 +658,8 @@
                 grade: '9.5', frequency: '98%',
                 content: "• Modelagem de Dados Relacionais e NoSQL\n• Machine Learning e Processamento de Linguagem Natural (NLP)\n• Cloud Computing e Arquiteturas Escaláveis\n• Governança de Dados, LGPD e Segurança da Informação\n• Desenvolvimento de Microserviços com Docker e K8s\n• Fundamentos de Inteligência Artificial Generativa",
                 lawReference: lawPhrases[0].text,
-                issuerType: 'PJ' // Default: Pessoa Jurídica
+                issuerType: 'PJ', // Default: Pessoa Jurídica
+                courseType: 'curso' // Default: curso
             },
             activeTrait: 0, activePalette: 0, activeFont: 0, 
             headerLogos: [], footerLogos: [], signature: null, layout: 'side',
@@ -783,14 +784,44 @@
                 { label: 'Localidade', name: 'location' }, 
                 { label: 'Nome Aluno', name: 'studentName', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
                 { label: 'CPF', name: 'studentId', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
-                { label: 'Curso', name: 'courseName', area: true }, { label: 'Início', name: 'startDate' }, { label: 'Término', name: 'endDate' }, { label: 'Horas', name: 'hours' }, { label: 'Emissão', name: 'date' }, { label: 'Responsável', name: 'instructor' }, { label: 'Cargo', name: 'instructorTitle' }
+                { label: 'Conclusão', name: 'endDate' }, { label: 'Horas', name: 'hours' }, { label: 'Emissão', name: 'date' }, { label: 'Responsável', name: 'instructor' }, { label: 'Cargo', name: 'instructorTitle' }
             ];
             
-            document.getElementById('inputs-container').innerHTML = issuerToggle + fields.map(f => `
+            // Selector de Tipo de Curso
+            const courseTypeOptions = ['curso', 'minicurso', 'treinamento', 'programa', 'workshop', 'palestra'];
+            const courseTypeSelect = `
+                <div>
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">Tipo de Evento</label>
+                    <select onchange="updateData('courseType', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 uppercase">
+                        ${courseTypeOptions.map(opt => `<option value="${opt}" ${state.data.courseType === opt ? 'selected' : ''}>${opt.toUpperCase()}</option>`).join('')}
+                    </select>
+                </div>
+            `;
+
+            // Constroi o HTML dos inputs
+            let inputsHTML = issuerToggle + fields.slice(0, 5).map(f => `
                 <div class="${f.disabled ? 'opacity-50 pointer-events-none' : ''}">
                     <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label} <span class="text-indigo-400">${f.info || ''}</span></label>
                     ${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">`}
                 </div>`).join('');
+            
+            // Adiciona o seletor de tipo de curso antes do nome do curso
+            inputsHTML += courseTypeSelect;
+
+            inputsHTML += `
+                <div>
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">Nome do Curso</label>
+                    <textarea oninput="updateData('courseName', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data.courseName || ''}</textarea>
+                </div>
+            `;
+
+            inputsHTML += fields.slice(6).map(f => `
+                <div class="${f.disabled ? 'opacity-50 pointer-events-none' : ''}">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label} <span class="text-indigo-400">${f.info || ''}</span></label>
+                    ${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">`}
+                </div>`).join('');
+
+            document.getElementById('inputs-container').innerHTML = inputsHTML;
             
             // Lógica para mudar o rótulo do campo de registro com base no modo
             const regLabel = isBatch ? 'Nº Registro do Lote' : 'Nº Registro';
@@ -963,9 +994,9 @@
                             <div class="w-full flex flex-col items-center justify-center gap-2 px-4">
                                 <h2 class="font-black leading-tight break-words-custom uppercase m-0 w-full text-[26px]" style="color: ${primaryC}">${student.name}</h2>
                                 <div class="w-full flex flex-col items-center gap-2">
-                                    <p class="text-[17px] leading-tight opacity-95 m-0 font-medium">Portador(a) do CPF <strong class="font-bold">${student.id}</strong>, concluiu com êxito o programa de</p>
+                                    <p class="text-[17px] leading-tight opacity-95 m-0 font-medium">Portador(a) do CPF <strong class="font-bold">${student.id}</strong>, concluiu com êxito o ${d.courseType} de</p>
                                     <h3 class="font-black uppercase text-[26px] leading-tight transition-colors m-0 break-words-custom w-full max-w-[90%]" style="color: ${primaryC}">${d.courseName}</h3>
-                                    <p class="text-[17px] leading-tight opacity-95 m-0 font-medium">realizado no período de <strong>${d.startDate}</strong> a <strong>${d.endDate}</strong>, <br> totalizando uma carga horária de <strong>${d.hours}</strong> horas.</p>
+                                    <p class="text-[17px] leading-tight opacity-95 m-0 font-medium">concluído em <strong>${d.endDate}</strong>, <br> totalizando uma carga horária de <strong>${d.hours}</strong> horas.</p>
                                 </div>
                             </div>
                         </main>
@@ -1262,8 +1293,8 @@
             document.getElementById('display-cnpj').innerText = idLabel + ': ' + d.cnpj;
             document.getElementById('display-studentName').innerText = d.studentName;
             document.getElementById('display-studentId').innerText = d.studentId;
+            document.getElementById('display-courseType').innerText = d.courseType || 'curso';
             document.getElementById('display-courseName').innerText = d.courseName;
-            document.getElementById('display-startDate').innerText = d.startDate;
             document.getElementById('display-endDate').innerText = d.endDate;
             document.getElementById('display-hours').innerText = d.hours;
             document.getElementById('display-instructor').innerText = d.instructor;
