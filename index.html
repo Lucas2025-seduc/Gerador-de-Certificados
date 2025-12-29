@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS - GERADOR DE CERTIFICADOS</title>
+    <title>NEXUS - GERADOR DE CERTIFICADOS EM LOTE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Fontes Otimizadas -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;700;900&family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;700;900&family=Montserrat:wght@300;400;700;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Libre+Baskerville:wght@400;700&family=Lora:ital,wght@0,400;0,700;1,400&family=Raleway:wght@300;400;700;900&family=Open+Sans:wght@300;400;700&family=Merriweather:wght@300;400;700&family=Arvo:wght@400;700&family=Bebas+Neue&family=Oswald:wght@300;400;700&family=Quicksand:wght@300;400;700&family=Cormorant+Garamond:wght@400;600;700&family=Spectral:wght@400;700&family=Roboto:wght@300;400;700&family=Ubuntu:wght@300;400;700&family=Bitter:wght@400;700&family=Crimson+Text:wght@400;600;700&display=swap" rel="stylesheet">
@@ -28,7 +28,7 @@
             }
 
             /* Esconde Interface */
-            .no-print, #sidebar, #main-container > aside, #license-modal { display: none !important; }
+            .no-print, #sidebar, #main-container > aside, #license-modal, .batch-controls { display: none !important; }
 
             /* Ajusta Containers */
             #main-container { 
@@ -50,7 +50,7 @@
                 background: white !important;
             }
 
-            #preview-inner {
+            #preview-inner, #batch-container {
                 transform: none !important;
                 display: block !important;
                 width: 100% !important;
@@ -58,6 +58,10 @@
                 padding: 0 !important;
                 margin: 0 !important;
             }
+            
+            /* Garante que se estiver no modo batch, o container single suma e vice versa */
+            body.printing-batch #preview-inner { display: none !important; }
+            body.printing-single #batch-container { display: none !important; }
 
             /* Força Quebra de Página Exata */
             .certificate-page {
@@ -78,7 +82,7 @@
                 top: 0 !important;
             }
 
-            /* Remove última quebra se necessário, mas aqui queremos 2 páginas fixas */
+            /* Remove última quebra se necessário */
             .certificate-page:last-child {
                 page-break-after: auto !important;
                 break-after: auto !important;
@@ -121,9 +125,13 @@
             30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
             40%, 60% { transform: translate3d(4px, 0, 0); }
         }
+        
+        /* Ocultar scrollbar no textarea mas permitir scroll */
+        textarea.no-scrollbar::-webkit-scrollbar { display: none; }
+        textarea.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-[#020617] text-slate-300 font-sans lg:overflow-hidden h-full">
+<body class="bg-[#020617] text-slate-300 font-sans lg:overflow-hidden h-full printing-single">
 
     <!-- Modal de Licença -->
     <div id="license-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 hidden opacity-0 transition-opacity duration-300">
@@ -163,6 +171,11 @@
                 <button onclick="validateLicense()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-900/20 uppercase tracking-widest text-xs transition-all active:scale-95 mt-2">
                     Desbloquear Aplicativo
                 </button>
+
+                <!-- Botão Voltar -->
+                <button onclick="document.getElementById('license-modal').classList.add('hidden')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl uppercase tracking-widest text-[10px] transition-colors mt-2 border border-slate-700">
+                    Voltar à Tela Inicial
+                </button>
                 
                 <p class="text-[10px] text-center text-slate-600 mt-4">
                     Licença vinculada unicamente a este dispositivo.<br>Nexus Security System © 2025
@@ -188,7 +201,7 @@
                     </div>
                 </div>
 
-                <!-- Painel de Status da Licença (NOVO) -->
+                <!-- Painel de Status da Licença -->
                 <div id="license-panel" class="mb-6 p-4 rounded-xl bg-slate-950/50 border border-slate-800 shadow-inner relative overflow-hidden group">
                     <div class="absolute top-0 left-0 w-1 h-full bg-orange-500 transition-colors" id="license-indicator-bar"></div>
                     
@@ -214,8 +227,32 @@
                     </div>
                 </div>
 
-                <!-- Seletor de Layout (Apenas Desktop) -->
-                <section class="bg-slate-800/40 p-3 rounded-2xl border border-slate-700/50 hidden lg:block">
+                <!-- BATCH MODE TOGGLE -->
+                <div class="bg-indigo-900/20 p-4 rounded-2xl border border-indigo-500/30 shadow-lg mb-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                            <i data-lucide="users" class="w-4 h-4"></i> Geração em Lote
+                        </h2>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="batch-toggle" class="sr-only peer" onchange="toggleBatchMode(this)">
+                            <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+                    
+                    <div id="batch-controls" class="hidden space-y-3 transition-all">
+                        <div>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Lista de Alunos (Nome, CPF, Nota, Frequência)</label>
+                            <textarea id="batch-input" rows="5" class="w-full bg-slate-950 border border-indigo-500/30 rounded-xl p-3 text-[10px] font-mono text-slate-300 outline-none focus:ring-1 focus:ring-indigo-500 resize-y no-scrollbar leading-relaxed" placeholder="João Silva, 123.456.789-00, 9.5, 100%&#10;Maria Santos, 111.222.333-44, 8.0, 95%"></textarea>
+                            <p class="text-[8px] text-slate-500 mt-1 italic">Um aluno por linha. Formato: Nome, CPF, Nota (Opcional), Frequência (Opcional)</p>
+                        </div>
+                        <button onclick="processBatch()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-lg text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="play" class="w-3 h-3"></i> Processar Lista
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Seletor de Layout (Só aparece se NÃO estiver em lote) -->
+                <section id="layout-controls" class="bg-slate-800/40 p-3 rounded-2xl border border-slate-700/50 hidden lg:block">
                     <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Visualização</label>
                     <div class="flex gap-2">
                         <button onclick="toggleLayout('side')" id="btn-side" class="flex-1 flex items-center justify-center gap-2 p-2 rounded-xl text-[10px] font-bold uppercase transition-all bg-blue-600 text-white shadow-lg">
@@ -318,9 +355,28 @@
                     <div id="verso-inputs-container" class="space-y-3"></div>
                 </section>
 
-                <button onclick="handlePrintAttempt()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-2xl transition-all uppercase tracking-widest text-xs active:scale-95 group sticky bottom-0 z-50 md:static shadow-emerald-900/50">
+                <!-- Botões de Ação (Single Mode) -->
+                <button id="btn-save-single" onclick="handlePrintAttempt()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-2xl transition-all uppercase tracking-widest text-xs active:scale-95 group sticky bottom-0 z-50 md:static shadow-emerald-900/50">
                     <i data-lucide="printer" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i> Salvar PDF (A4)
                 </button>
+
+                 <!-- Botões de Ação (Batch Mode - Hidden by default) -->
+                 <div id="btn-save-batch-group" class="hidden space-y-2 sticky bottom-0 z-50 md:static">
+                    <div class="flex gap-2 items-center bg-slate-900 p-2 rounded-xl border border-slate-700">
+                        <button onclick="navigateBatch(-1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-white"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                        <span id="batch-counter" class="text-[10px] font-bold text-white flex-1 text-center">Visualizando 1 de 1</span>
+                        <button onclick="navigateBatch(1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-white"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                    </div>
+
+                    <button onclick="handlePrintCurrentBatch()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all uppercase tracking-widest text-[10px]">
+                        <i data-lucide="file-down" class="w-4 h-4"></i> Salvar Atual (Separado)
+                    </button>
+
+                    <button onclick="handlePrintBatchAll()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-500 hover:to-purple-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-2xl transition-all uppercase tracking-widest text-xs active:scale-95 group shadow-indigo-900/50">
+                        <i data-lucide="layers" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i> Salvar Todos (Arquivo Único)
+                    </button>
+                 </div>
+
             </div>
 
             <footer class="mt-8 border-t border-slate-800 pt-6 pb-2 text-[9px] text-slate-500 leading-relaxed no-print shrink-0 hidden lg:block">
@@ -338,12 +394,13 @@
             </footer>
         </aside>
 
-        <!-- Preview Area: Onde o certificado aparece -->
+        <!-- Preview Area -->
         <main id="preview-area-wrapper" class="flex-1 flex flex-col items-center bg-[#080c16] custom-scroll relative order-1 lg:order-2 overflow-hidden lg:overflow-auto min-h-[400px] lg:h-full border-b border-slate-800 lg:border-0">
-            <!-- Container Interno com Zoom Dinâmico -->
+            
+            <!-- Container Interno (Single View) -->
             <div id="preview-inner" class="flex transition-all duration-300 p-8 lg:p-20 layout-side-by-side gap-8 lg:gap-16 origin-top" style="transform: scale(0.35);">
                 
-                <!-- PÁGINA 1: FRENTE (1122x793px = A4 96dpi Landscape) -->
+                <!-- PÁGINA 1: FRENTE -->
                 <div id="cert-front" class="certificate-page relative w-[1122px] h-[793px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] shrink-0 overflow-hidden box-border bg-white text-slate-900 flex flex-col">
                     <div id="front-pattern" class="absolute inset-0 pointer-events-none z-0"></div>
                     <div id="front-ornaments" class="ornate-container-svg z-10"></div>
@@ -397,7 +454,7 @@
                     </div>
                 </div>
 
-                <!-- PÁGINA 2: VERSO (1122x793px = A4 96dpi Landscape) -->
+                <!-- PÁGINA 2: VERSO -->
                 <div id="cert-back" class="certificate-page relative w-[1122px] h-[793px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] shrink-0 bg-white text-slate-900 overflow-hidden box-border border border-slate-100">
                     <div id="back-pattern" class="absolute inset-0 pointer-events-none opacity-[0.06]"></div>
                     <div id="back-accent-bar" class="absolute left-0 top-0 w-8 h-full shadow-inner"></div>
@@ -446,7 +503,7 @@
                                       <h4 id="audit-header" class="text-xs font-black uppercase border-b border-slate-200 pb-2 m-0 tracking-widest">Audit de Registro</h4>
                                       <div class="grid grid-cols-1 gap-2 text-center text-slate-800">
                                         <div class="bg-slate-50 p-4 rounded-xl border-b-2 border-slate-300">
-                                          <span class="text-[8px] font-black block opacity-40 uppercase mb-1">Nº de Registro de Certificado</span>
+                                          <span class="text-[8px] font-black block opacity-40 uppercase mb-1">Nº de Registro do Lote</span>
                                           <span id="display-regNum" class="text-sm font-black uppercase tracking-widest">---</span>
                                         </div>
                                         <div class="bg-slate-50 p-3 rounded-xl border-b-2 border-slate-300 flex flex-col items-center">
@@ -461,18 +518,23 @@
                     </div>
                 </div>
             </div>
+
+            <!-- CONTAINER BATCH (Invisível até ativar) -->
+            <div id="batch-container" class="hidden flex-col items-center p-8 lg:p-20 gap-8 lg:gap-16 origin-top" style="transform: scale(0.35);">
+                <!-- Os certificados em lote serão injetados aqui via JS -->
+            </div>
+
         </main>
     </div>
 
     <script>
-        // --- SISTEMA DE LICENCIAMENTO NEXUS ---
+        // --- SISTEMA DE LICENCIAMENTO (Mantido) ---
         const SECRET_SALT = "NEXUS_SEC_2025_KEY_MARIA_JAQUELINE";
         const STORAGE_KEY_ID = "nexus_device_id";
         const STORAGE_KEY_COUNT = "nexus_print_count";
         const STORAGE_KEY_LICENSE = "nexus_license_key";
         const FREE_LIMIT = 1;
 
-        // Gera hash simples (SHA-256 simulado para client-side sem libs pesadas)
         async function sha256(message) {
             const msgBuffer = new TextEncoder().encode(message);
             const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -480,57 +542,46 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // Obtém ou cria ID do dispositivo
         function getDeviceId() {
             let id = localStorage.getItem(STORAGE_KEY_ID);
-            if (!id) {
-                // Gera um UUID v4
-                id = crypto.randomUUID();
-                localStorage.setItem(STORAGE_KEY_ID, id);
-            }
+            if (!id) { id = crypto.randomUUID(); localStorage.setItem(STORAGE_KEY_ID, id); }
             return id;
         }
 
-        // Verifica licença
         async function isLicensed() {
             const storedKey = localStorage.getItem(STORAGE_KEY_LICENSE);
             if (!storedKey) return false;
-            
             const deviceId = getDeviceId();
-            // A licença válida é o hash do (DeviceID + Secret)
-            // Pegamos os primeiros 16 caracteres para ser a chave
             const fullHash = await sha256(deviceId + SECRET_SALT);
             const validKey = fullHash.substring(0, 16).toUpperCase();
-            
             return storedKey === validKey;
         }
 
-        // Tenta imprimir
         async function handlePrintAttempt() {
             const licensed = await isLicensed();
             let count = parseInt(localStorage.getItem(STORAGE_KEY_COUNT) || "0");
-
-            if (licensed) {
-                window.print();
-                return;
-            }
-
+            if (licensed) { window.print(); return; }
             if (count < FREE_LIMIT) {
-                count++;
-                localStorage.setItem(STORAGE_KEY_COUNT, count.toString());
-                updateLicenseUI(); // Atualiza a UI após gastar crédito
-                window.print();
-            } else {
-                showLicenseModal();
-            }
+                count++; localStorage.setItem(STORAGE_KEY_COUNT, count.toString());
+                updateLicenseUI(); window.print();
+            } else { showLicenseModal(); }
         }
 
-        // Atualiza o painel de licença
+        // Nova função para Lote (Consome 1 crédito por clique, não por página, para ser justo na versão Free)
+        async function handleBatchPrintTrigger() {
+            const licensed = await isLicensed();
+            let count = parseInt(localStorage.getItem(STORAGE_KEY_COUNT) || "0");
+            if (licensed) { window.print(); return; }
+            if (count < FREE_LIMIT) {
+                count++; localStorage.setItem(STORAGE_KEY_COUNT, count.toString());
+                updateLicenseUI(); window.print();
+            } else { showLicenseModal(); }
+        }
+
         async function updateLicenseUI() {
             const licensed = await isLicensed();
             const count = parseInt(localStorage.getItem(STORAGE_KEY_COUNT) || "0");
             const remaining = Math.max(0, FREE_LIMIT - count);
-            
             const panel = document.getElementById('license-panel');
             const indicator = document.getElementById('license-indicator-bar');
             const badge = document.getElementById('status-badge');
@@ -539,29 +590,17 @@
             const creditsDisplay = document.getElementById('credits-display');
 
             if (licensed) {
-                indicator.classList.remove('bg-orange-500');
-                indicator.classList.add('bg-emerald-500');
-                
+                indicator.classList.remove('bg-orange-500'); indicator.classList.add('bg-emerald-500');
                 badge.className = "text-[9px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20";
                 badge.innerText = "PREMIUM ATIVO";
-                
-                freeInfo.classList.add('hidden');
-                premiumInfo.classList.remove('hidden');
+                freeInfo.classList.add('hidden'); premiumInfo.classList.remove('hidden');
             } else {
-                indicator.classList.add('bg-orange-500');
-                indicator.classList.remove('bg-emerald-500');
-                
+                indicator.classList.add('bg-orange-500'); indicator.classList.remove('bg-emerald-500');
                 badge.className = "text-[9px] font-black uppercase tracking-widest text-orange-400 bg-orange-500/10 px-2 py-1 rounded border border-orange-500/20";
                 badge.innerText = "VERSÃO GRATUITA";
-                
-                freeInfo.classList.remove('hidden');
-                premiumInfo.classList.add('hidden');
+                freeInfo.classList.remove('hidden'); premiumInfo.classList.add('hidden');
                 creditsDisplay.innerText = remaining;
-                
-                if (remaining === 0) {
-                    creditsDisplay.classList.add('text-red-500');
-                    creditsDisplay.classList.remove('text-white');
-                }
+                if (remaining === 0) { creditsDisplay.classList.add('text-red-500'); creditsDisplay.classList.remove('text-white'); }
             }
         }
 
@@ -570,22 +609,18 @@
             const display = document.getElementById('device-id-display');
             display.innerText = getDeviceId();
             modal.classList.remove('hidden');
-            // Pequeno delay para animação de opacidade
             setTimeout(() => modal.classList.remove('opacity-0'), 10);
         }
 
         function copyDeviceId() {
             const id = document.getElementById('device-id-display').innerText;
-            navigator.clipboard.writeText(id).then(() => {
-                alert("ID copiado para a área de transferência!");
-            });
+            navigator.clipboard.writeText(id).then(() => { alert("ID copiado para a área de transferência!"); });
         }
 
         async function validateLicense() {
             const input = document.getElementById('license-input');
             const error = document.getElementById('license-error');
             const userKey = input.value.trim().toUpperCase();
-            
             const deviceId = getDeviceId();
             const fullHash = await sha256(deviceId + SECRET_SALT);
             const validKey = fullHash.substring(0, 16).toUpperCase();
@@ -594,15 +629,13 @@
                 localStorage.setItem(STORAGE_KEY_LICENSE, userKey);
                 alert("Licença ativada com sucesso! O Nexus está desbloqueado.");
                 document.getElementById('license-modal').classList.add('hidden');
-                updateLicenseUI(); // Atualiza UI após ativar
-                // window.print(); // Opcional: imprimir logo após ativar
+                updateLicenseUI();
             } else {
                 error.classList.remove('hidden');
                 input.classList.add('border-red-500', 'shake');
                 setTimeout(() => input.classList.remove('shake'), 820);
             }
         }
-
         // --- FIM SISTEMA LICENCIAMENTO ---
 
         const lawPhrases = [
@@ -624,11 +657,16 @@
                 instructorsInfo: "Prof. Dr. Ricardo Santos (Doutor em Ciência da Computação - USP)\nMa. Jaqueline Pereira (Mestra em Engenharia de Software - MIT)",
                 grade: '9.5', frequency: '98%',
                 content: "• Modelagem de Dados Relacionais e NoSQL\n• Machine Learning e Processamento de Linguagem Natural (NLP)\n• Cloud Computing e Arquiteturas Escaláveis\n• Governança de Dados, LGPD e Segurança da Informação\n• Desenvolvimento de Microserviços com Docker e K8s\n• Fundamentos de Inteligência Artificial Generativa",
-                lawReference: lawPhrases[0].text
+                lawReference: lawPhrases[0].text,
+                issuerType: 'PJ' // Default: Pessoa Jurídica
             },
             activeTrait: 0, activePalette: 0, activeFont: 0, 
             headerLogos: [], footerLogos: [], signature: null, layout: 'side',
-            headerLogoSize: 80, footerLogoSize: 45
+            headerLogoSize: 80, footerLogoSize: 45,
+            
+            // Novos estados para Batch
+            isBatchMode: false,
+            batchList: [] // [{ name, id }]
         };
 
         const traits = [
@@ -650,21 +688,21 @@
         ];
 
         const palettes = [
-            { id: 0, name: 'Ouro Real', primary: '#854d0e', title: '#ca8a04', bg: '#ffffff', dark: false },
-            { id: 1, name: 'Safira Marinho', primary: '#1e3a8a', title: '#b45309', bg: '#f8fafc', dark: false },
-            { id: 2, name: 'Esmeralda', primary: '#064e3b', title: '#d97706', bg: '#f0fdf4', dark: false },
-            { id: 3, name: 'Obsidiana Ouro', primary: '#fbbf24', title: '#ffffff', bg: '#0f172a', dark: true },
-            { id: 4, name: 'Rubi Diplomata', primary: '#991b1b', title: '#b91c1c', bg: '#fffafb', dark: false },
-            { id: 5, name: 'Metal Prata', primary: '#334155', title: '#0f172a', bg: '#ffffff', dark: false },
-            { id: 6, name: 'Ciano Cyber', primary: '#22d3ee', title: '#ffffff', bg: '#020617', dark: true },
-            { id: 7, name: 'Vinho Realeza', primary: '#7f1d1d', title: '#9f1239', bg: '#fdf2f2', dark: false },
-            { id: 8, name: 'Púrpura Aura', primary: '#a78bfa', title: '#ffffff', bg: '#020617', dark: true },
-            { id: 9, name: 'Carbono Tech', primary: '#94a3b8', title: '#e2e8f0', bg: '#171717', dark: true },
-            { id: 10, name: 'Bronze Antigo', primary: '#78350f', title: '#92400e', bg: '#fffbeb', dark: false },
-            { id: 11, name: 'Ametista Real', primary: '#581c87', title: '#7e22ce', bg: '#faf5ff', dark: false },
-            { id: 12, name: 'Cobre Metálico', primary: '#9a3412', title: '#c2410c', bg: '#fff7ed', dark: false },
-            { id: 13, name: 'Cinza Ardósia', primary: '#475569', title: '#1e293b', bg: '#f1f5f9', dark: false },
-            { id: 14, name: 'Verde Oliva', primary: '#365314', title: '#4d7c0f', bg: '#ecfccb', dark: false }
+            { id: 0, name: 'Ouro Real', primary: '#854d0e', bg: '#ffffff', dark: false },
+            { id: 1, name: 'Safira Marinho', primary: '#1e3a8a', bg: '#f8fafc', dark: false },
+            { id: 2, name: 'Esmeralda', primary: '#064e3b', bg: '#f0fdf4', dark: false },
+            { id: 3, name: 'Obsidiana Ouro', primary: '#fbbf24', bg: '#0f172a', dark: true },
+            { id: 4, name: 'Rubi Diplomata', primary: '#991b1b', bg: '#fffafb', dark: false },
+            { id: 5, name: 'Metal Prata', primary: '#334155', bg: '#ffffff', dark: false },
+            { id: 6, name: 'Ciano Cyber', primary: '#22d3ee', bg: '#020617', dark: true },
+            { id: 7, name: 'Vinho Realeza', primary: '#7f1d1d', bg: '#fdf2f2', dark: false },
+            { id: 8, name: 'Púrpura Aura', primary: '#a78bfa', bg: '#020617', dark: true },
+            { id: 9, name: 'Carbono Tech', primary: '#94a3b8', bg: '#171717', dark: true },
+            { id: 10, name: 'Bronze Antigo', primary: '#78350f', bg: '#fffbeb', dark: false },
+            { id: 11, name: 'Ametista Real', primary: '#581c87', bg: '#faf5ff', dark: false },
+            { id: 12, name: 'Cobre Metálico', primary: '#9a3412', bg: '#fff7ed', dark: false },
+            { id: 13, name: 'Cinza Ardósia', primary: '#475569', bg: '#f1f5f9', dark: false },
+            { id: 14, name: 'Verde Oliva', primary: '#365314', bg: '#ecfccb', dark: false }
         ];
 
         const fonts = [
@@ -683,17 +721,17 @@
         function getTraitSVG(pattern, color) {
             const opacity = 0.22;
             switch(pattern) {
-                case 'guilloche': return `<svg width="100%" height="100%"><defs><pattern id="g" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M0 50 Q 25 0 50 50 T 100 50 M0 60 Q 25 10 50 60 T 100 60" fill="none" stroke="${color}" stroke-width="0.8" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#g)"/></svg>`;
-                case 'mesh': return `<svg width="100%" height="100%"><defs><pattern id="m" width="60" height="60" patternUnits="userSpaceOnUse"><path d="M 60 0 L 0 0 0 60" fill="none" stroke="${color}" stroke-width="0.6" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#m)"/></svg>`;
-                case 'circuit': return `<svg width="100%" height="100%"><defs><pattern id="c" width="120" height="120" patternUnits="userSpaceOnUse"><path d="M0 60 h20 l10 -10 h40 l10 10 h40 M60 0 v20 l10 10 v40 l-10 10 v40" fill="none" stroke="${color}" stroke-width="1.2" opacity="${opacity*1.5}"/><circle cx="30" cy="50" r="3" fill="${color}" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#c)"/></svg>`;
-                case 'hex': return `<svg width="100%" height="100%"><defs><pattern id="h" width="30" height="52" patternUnits="userSpaceOnUse"><path d="M15 52L0 43.3V26L15 17.3L30 26V43.3L15 52Z" fill="none" stroke="${color}" stroke-width="0.6" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#h)"/></svg>`;
-                case 'stars': return `<svg width="100%" height="100%"><defs><pattern id="s" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="2" fill="${color}" opacity="${opacity}"/><circle cx="10" cy="10" r="0.8" fill="${color}" opacity="${opacity/2}"/></pattern></defs><rect width="100%" height="100%" fill="url(#s)"/></svg>`;
+                case 'guilloche': return `<svg width="100%" height="100%"><defs><pattern id="g${color.replace('#','')}" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M0 50 Q 25 0 50 50 T 100 50 M0 60 Q 25 10 50 60 T 100 60" fill="none" stroke="${color}" stroke-width="0.8" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#g${color.replace('#','')})"/></svg>`;
+                case 'mesh': return `<svg width="100%" height="100%"><defs><pattern id="m${color.replace('#','')}" width="60" height="60" patternUnits="userSpaceOnUse"><path d="M 60 0 L 0 0 0 60" fill="none" stroke="${color}" stroke-width="0.6" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#m${color.replace('#','')})"/></svg>`;
+                case 'circuit': return `<svg width="100%" height="100%"><defs><pattern id="c${color.replace('#','')}" width="120" height="120" patternUnits="userSpaceOnUse"><path d="M0 60 h20 l10 -10 h40 l10 10 h40 M60 0 v20 l10 10 v40 l-10 10 v40" fill="none" stroke="${color}" stroke-width="1.2" opacity="${opacity*1.5}"/><circle cx="30" cy="50" r="3" fill="${color}" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#c${color.replace('#','')})"/></svg>`;
+                case 'hex': return `<svg width="100%" height="100%"><defs><pattern id="h${color.replace('#','')}" width="30" height="52" patternUnits="userSpaceOnUse"><path d="M15 52L0 43.3V26L15 17.3L30 26V43.3L15 52Z" fill="none" stroke="${color}" stroke-width="0.6" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#h${color.replace('#','')})"/></svg>`;
+                case 'stars': return `<svg width="100%" height="100%"><defs><pattern id="s${color.replace('#','')}" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="2" fill="${color}" opacity="${opacity}"/><circle cx="10" cy="10" r="0.8" fill="${color}" opacity="${opacity/2}"/></pattern></defs><rect width="100%" height="100%" fill="url(#s${color.replace('#','')})"/></svg>`;
                 case 'waves': return `<svg width="100%" height="100%"><path d="M0 100 Q 250 50 500 100 T 1000 100" stroke="${color}" fill="none" opacity="${opacity}" stroke-width="2"/></svg>`;
-                case 'artdeco': return `<svg width="100%" height="100%"><defs><pattern id="ad" width="60" height="60" patternUnits="userSpaceOnUse"><path d="M30 0 A30 30 0 0 1 60 30 M0 30 A30 30 0 0 1 30 60 M30 60 A30 30 0 0 1 0 30 M60 30 A30 30 0 0 1 30 0" fill="none" stroke="${color}" stroke-width="1" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#ad)"/></svg>`;
-                case 'floral': return `<svg width="100%" height="100%"><defs><pattern id="f" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M0 80 Q 20 40 40 40 T 80 0 M80 80 Q 60 40 40 40 T 0 0" fill="none" stroke="${color}" stroke-width="1" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#f)"/></svg>`;
-                case 'techgrid': return `<svg width="100%" height="100%"><defs><pattern id="tg" width="20" height="20" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="20" height="20" fill="none" stroke="${color}" stroke-width="0.5" opacity="${opacity}"/><rect x="8" y="8" width="4" height="4" fill="${color}" opacity="${opacity/2}"/></pattern></defs><rect width="100%" height="100%" fill="url(#tg)"/></svg>`;
-                case 'dots': return `<svg width="100%" height="100%"><defs><pattern id="dt" width="15" height="15" patternUnits="userSpaceOnUse"><circle cx="7.5" cy="7.5" r="1.5" fill="${color}" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#dt)"/></svg>`;
-                case 'celtic': return `<svg width="100%" height="100%"><defs><pattern id="cl" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 20 Q 10 0 20 20 T 40 20 M20 0 V 40" fill="none" stroke="${color}" stroke-width="1.5" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#cl)"/></svg>`;
+                case 'artdeco': return `<svg width="100%" height="100%"><defs><pattern id="ad${color.replace('#','')}" width="60" height="60" patternUnits="userSpaceOnUse"><path d="M30 0 A30 30 0 0 1 60 30 M0 30 A30 30 0 0 1 30 60 M30 60 A30 30 0 0 1 0 30 M60 30 A30 30 0 0 1 30 0" fill="none" stroke="${color}" stroke-width="1" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#ad${color.replace('#','')})"/></svg>`;
+                case 'floral': return `<svg width="100%" height="100%"><defs><pattern id="f${color.replace('#','')}" width="80" height="80" patternUnits="userSpaceOnUse"><path d="M0 80 Q 20 40 40 40 T 80 0 M80 80 Q 60 40 40 40 T 0 0" fill="none" stroke="${color}" stroke-width="1" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#f${color.replace('#','')})"/></svg>`;
+                case 'techgrid': return `<svg width="100%" height="100%"><defs><pattern id="tg${color.replace('#','')}" width="20" height="20" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="20" height="20" fill="none" stroke="${color}" stroke-width="0.5" opacity="${opacity}"/><rect x="8" y="8" width="4" height="4" fill="${color}" opacity="${opacity/2}"/></pattern></defs><rect width="100%" height="100%" fill="url(#tg${color.replace('#','')})"/></svg>`;
+                case 'dots': return `<svg width="100%" height="100%"><defs><pattern id="dt${color.replace('#','')}" width="15" height="15" patternUnits="userSpaceOnUse"><circle cx="7.5" cy="7.5" r="1.5" fill="${color}" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#dt${color.replace('#','')})"/></svg>`;
+                case 'celtic': return `<svg width="100%" height="100%"><defs><pattern id="cl${color.replace('#','')}" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 20 Q 10 0 20 20 T 40 20 M20 0 V 40" fill="none" stroke="${color}" stroke-width="1.5" opacity="${opacity}"/></pattern></defs><rect width="100%" height="100%" fill="url(#cl${color.replace('#','')})"/></svg>`;
                 default: return '';
             }
         }
@@ -723,18 +761,48 @@
         }
 
         function renderInputs() {
-            const fields = [
-                { label: 'Instituição', name: 'company' }, { label: 'CNPJ', name: 'cnpj' }, { label: 'Localidade', name: 'location' }, { label: 'Nome Aluno', name: 'studentName' }, { label: 'CPF', name: 'studentId' }, { label: 'Curso', name: 'courseName', area: true }, { label: 'Início', name: 'startDate' }, { label: 'Término', name: 'endDate' }, { label: 'Horas', name: 'hours' }, { label: 'Emissão', name: 'date' }, { label: 'Responsável', name: 'instructor' }, { label: 'Cargo', name: 'instructorTitle' }
-            ];
-            document.getElementById('inputs-container').innerHTML = fields.map(f => `<div><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label}</label>${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">`}</div>`).join('');
+            // Se estiver em modo Batch, desabilita inputs de nome e CPF individuais para evitar confusão
+            const isBatch = state.isBatchMode;
+            const isPF = state.data.issuerType === 'PF';
             
+            // Selector de Tipo de Emissor
+            const issuerToggle = `
+                <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-4">
+                    <button onclick="updateData('issuerType', 'PJ'); renderInputs();" class="flex-1 py-2 text-[10px] uppercase font-bold rounded-lg transition-all ${!isPF ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}">
+                        Instituição (PJ)
+                    </button>
+                    <button onclick="updateData('issuerType', 'PF'); renderInputs();" class="flex-1 py-2 text-[10px] uppercase font-bold rounded-lg transition-all ${isPF ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}">
+                        Pessoa Física (PF)
+                    </button>
+                </div>
+            `;
+
+            const fields = [
+                { label: isPF ? 'Nome Completo' : 'Instituição', name: 'company' }, 
+                { label: isPF ? 'CPF' : 'CNPJ', name: 'cnpj' }, 
+                { label: 'Localidade', name: 'location' }, 
+                { label: 'Nome Aluno', name: 'studentName', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
+                { label: 'CPF', name: 'studentId', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
+                { label: 'Curso', name: 'courseName', area: true }, { label: 'Início', name: 'startDate' }, { label: 'Término', name: 'endDate' }, { label: 'Horas', name: 'hours' }, { label: 'Emissão', name: 'date' }, { label: 'Responsável', name: 'instructor' }, { label: 'Cargo', name: 'instructorTitle' }
+            ];
+            
+            document.getElementById('inputs-container').innerHTML = issuerToggle + fields.map(f => `
+                <div class="${f.disabled ? 'opacity-50 pointer-events-none' : ''}">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label} <span class="text-indigo-400">${f.info || ''}</span></label>
+                    ${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">`}
+                </div>`).join('');
+            
+            // Lógica para mudar o rótulo do campo de registro com base no modo
+            const regLabel = isBatch ? 'Nº Registro do Lote' : 'Nº Registro';
+
             const vFields = [
                 { label: 'Ministrantes e Experiência', name: 'instructorsInfo', area: true },
-                { label: 'Nota', name: 'grade' }, { label: 'Frequência', name: 'frequency' }, { label: 'Nº Registro', name: 'regNum' }, { label: 'Link Validação', name: 'validationLink' }, { label: 'Grade Curricular', name: 'content', area: true }
+                { label: 'Nota', name: 'grade' }, { label: 'Frequência', name: 'frequency' }, 
+                { label: regLabel, name: 'regNum' }, // Alterado aqui
+                { label: 'Link Validação', name: 'validationLink' }, { label: 'Grade Curricular', name: 'content', area: true }
             ];
             let html = vFields.map(f => `<div><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label}</label>${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] text-slate-300 outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50">`}</div>`).join('');
             
-            // Seletor de Base Legal com opção Ocultar
             html += `<div><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">Base Legal (Seleção Rápida)</label>
                      <select onchange="updateData('lawReference', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] text-white outline-none">
                         <option value="none">-- Ocultar Amparo Legal --</option>
@@ -743,6 +811,320 @@
             
             document.getElementById('verso-inputs-container').innerHTML = html;
         }
+
+        // --- LÓGICA DE BATCH (LOTE) ---
+
+        function toggleBatchMode(checkbox) {
+            state.isBatchMode = checkbox.checked;
+            const controls = document.getElementById('batch-controls');
+            const singleBtn = document.getElementById('btn-save-single');
+            const batchBtns = document.getElementById('btn-save-batch-group');
+            const previewInner = document.getElementById('preview-inner');
+            const batchContainer = document.getElementById('batch-container');
+            const layoutControls = document.getElementById('layout-controls');
+            const body = document.body;
+
+            if (state.isBatchMode) {
+                controls.classList.remove('hidden');
+                singleBtn.classList.add('hidden');
+                batchBtns.classList.remove('hidden');
+                layoutControls.classList.add('hidden'); // Layout só faz sentido em single por enquanto
+                
+                previewInner.classList.add('hidden');
+                batchContainer.classList.remove('hidden');
+                batchContainer.classList.add('flex');
+                
+                body.classList.remove('printing-single');
+                body.classList.add('printing-batch');
+                
+                // Reiniciar inputs para mostrar estado desabilitado de nome/cpf
+                renderInputs();
+                // Se já tiver texto, processa
+                if(document.getElementById('batch-input').value.trim()) processBatch();
+            } else {
+                controls.classList.add('hidden');
+                singleBtn.classList.remove('hidden');
+                batchBtns.classList.add('hidden');
+                layoutControls.classList.remove('hidden');
+
+                previewInner.classList.remove('hidden');
+                batchContainer.classList.add('hidden');
+                batchContainer.classList.remove('flex');
+
+                body.classList.add('printing-single');
+                body.classList.remove('printing-batch');
+
+                renderInputs();
+                updateVisuals(); // Restaura visual único
+            }
+        }
+
+        function processBatch() {
+            const raw = document.getElementById('batch-input').value;
+            const lines = raw.split('\n').filter(l => l.trim().length > 0);
+            
+            state.batchList = lines.map(line => {
+                const parts = line.split(',');
+                // Default logic
+                let name = parts[0] ? parts[0].trim() : '---';
+                let id = parts[1] ? parts[1].trim() : '---';
+                let grade = parts[2] ? parts[2].trim() : null;
+                let freq = parts[3] ? parts[3].trim() : null;
+
+                // Simple fallback if user just pasted name (legacy supportish)
+                if (parts.length === 1) {
+                     name = line.trim();
+                     id = '---';
+                }
+
+                return { name, id, grade, freq };
+            });
+
+            if (state.batchList.length === 0) {
+                alert("Por favor, insira pelo menos um aluno na lista.");
+                return;
+            }
+
+            renderBatchDOM();
+        }
+
+        // Gera HTML String massiva para evitar manipular DOM elemento a elemento repetidamente
+        function renderBatchDOM() {
+            const container = document.getElementById('batch-container');
+            const trait = traits[state.activeTrait];
+            const palette = palettes[state.activePalette];
+            const font = fonts[state.activeFont];
+            const primaryC = palette.primary;
+            const d = state.data;
+
+            // Prepara estilos comuns
+            const bgStyle = `background-color: ${palette.bg}; color: ${palette.dark ? '#ffffff' : '#0f172a'}; font-family: ${font.family};`;
+            const patternSVG = getTraitSVG(trait.pattern, primaryC);
+            const ornateSVG = getOrnateDetails(trait.frame, primaryC);
+            const borderColor = primaryC + (palette.dark ? '20' : '15');
+            const sigFilter = palette.dark ? 'filter: invert(1) brightness(1.8) contrast(1.1);' : '';
+            const hbColor = palette.dark ? primaryC : '#0f172a';
+            const sigLineColor = palette.dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)';
+            
+            const idLabel = d.issuerType === 'PF' ? 'CPF' : 'CNPJ';
+
+            // Logos
+            let hLogosHTML = '';
+            if (state.headerLogos.length > 0) {
+                hLogosHTML = state.headerLogos.map(l => `<img src="${l.src}" class="object-contain" style="height: ${state.headerLogoSize}px; opacity: ${l.opacity};">`).join('');
+            } else {
+                hLogosHTML = `<div class="w-12 h-12 rounded-full border-2 flex items-center justify-center" style="color: ${primaryC}"><i data-lucide="award" class="w-6 h-6"></i></div>`;
+            }
+
+            let fLogosHTML = '';
+            if (state.footerLogos.length > 0) {
+                fLogosHTML = state.footerLogos.map(l => `<img src="${l.src}" class="object-contain" style="height: ${state.footerLogoSize}px; opacity: ${l.opacity};">`).join('');
+            }
+            
+            let bLogoHTML = '';
+            if (state.headerLogos.length > 0) bLogoHTML = `<img src="${state.headerLogos[0].src}" class="h-14 grayscale opacity-60 object-contain">`;
+
+            const legalDisplay = (d.lawReference && d.lawReference !== 'none') ? 'block' : 'none';
+
+            let batchHTML = '';
+
+            state.batchList.forEach((student, index) => {
+                // Identificador único para ancoragem se necessário
+                const idSuffix = `_batch_${index}`;
+                
+                // Determine values (Batch override > Global default)
+                const sGrade = student.grade || d.grade;
+                const sFreq = student.freq || d.frequency;
+                
+                // FRONT
+                batchHTML += `
+                <div id="cert-front${idSuffix}" class="certificate-page relative w-[1122px] h-[793px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] shrink-0 overflow-hidden box-border flex flex-col mb-20 break-after-page" style="${bgStyle}">
+                    <div class="absolute inset-0 pointer-events-none z-0">${patternSVG}</div>
+                    <div class="ornate-container-svg z-10">${ornateSVG}</div>
+                    <div class="absolute inset-0 border-[40px] pointer-events-none z-20" style="border-color: ${borderColor}">
+                        <div class="absolute inset-4 border-[2.5px]" style="border-color: ${primaryC}"></div>
+                    </div>
+
+                    <div class="absolute inset-[70px] flex flex-col items-center justify-between py-6 px-14 text-center box-border z-30 overflow-hidden">
+                        <header class="w-full flex flex-col items-center justify-center gap-3 shrink-0">
+                            <div class="flex flex-wrap items-center justify-center gap-8 w-full min-h-[40px] overflow-visible">${hLogosHTML}</div>
+                            <div class="w-full max-w-[85%]">
+                                <h3 class="text-lg font-black tracking-[0.4em] uppercase leading-tight break-words-custom" style="color: ${primaryC}">${d.company}</h3>
+                                <p class="text-[8px] font-black opacity-60 tracking-[0.2em] uppercase mt-1">${idLabel}: ${d.cnpj}</p>
+                            </div>
+                        </header>
+
+                        <main class="w-full flex flex-col items-center justify-center flex-1 py-2 gap-2 overflow-hidden">
+                            <div class="shrink-0">
+                                <h1 class="text-[32px] font-black tracking-[0.3em] uppercase m-0 leading-none" style="color: ${primaryC}">CERTIFICADO</h1>
+                                <div class="h-1 w-24 mx-auto mt-3 rounded-full" style="background-color: ${primaryC}"></div>
+                            </div>
+                            <p class="text-xl font-light italic opacity-60 m-0 shrink-0">Certificamos solenemente para os devidos fins que</p>
+                            <div class="w-full flex flex-col items-center justify-center gap-2 px-4">
+                                <h2 class="font-black leading-tight break-words-custom uppercase m-0 w-full text-[26px]" style="color: ${primaryC}">${student.name}</h2>
+                                <div class="w-full flex flex-col items-center gap-2">
+                                    <p class="text-[17px] leading-tight opacity-95 m-0 font-medium">Portador(a) do CPF <strong class="font-bold">${student.id}</strong>, concluiu com êxito o programa de</p>
+                                    <h3 class="font-black uppercase text-[26px] leading-tight transition-colors m-0 break-words-custom w-full max-w-[90%]" style="color: ${primaryC}">${d.courseName}</h3>
+                                    <p class="text-[17px] leading-tight opacity-95 m-0 font-medium">realizado no período de <strong>${d.startDate}</strong> a <strong>${d.endDate}</strong>, <br> totalizando uma carga horária de <strong>${d.hours}</strong> horas.</p>
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer class="w-full flex flex-col items-center justify-center shrink-0">
+                            <div class="flex items-center justify-center gap-2 text-sm font-black opacity-80 mb-3 border-y border-black/5 py-1 uppercase tracking-[0.2em] w-full max-w-[500px]">
+                               <i data-lucide="map-pin" class="w-4 h-4"></i>
+                               <span>${d.location}, EM ${d.date}</span>
+                            </div>
+                            <div class="flex flex-col items-center w-full border-t border-slate-500/10 pt-2 mb-3">
+                                <div class="flex flex-col items-center w-full max-w-[320px]">
+                                    <div class="h-12 w-full flex items-end justify-center relative mb-1">
+                                        ${state.signature ? `<img class="h-18 absolute bottom-1 contrast-125 brightness-50" src="${state.signature}" style="${sigFilter}">` : ''}
+                                        <div class="w-full h-[1.5px] transition-colors" style="background-color: ${sigLineColor}"></div>
+                                    </div>
+                                    <p class="text-sm font-black uppercase m-0 leading-none text-center">${d.instructor}</p>
+                                    <p class="text-[9px] opacity-60 uppercase font-bold m-0 mt-1 leading-none text-center">${d.instructorTitle}</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center justify-center gap-8 w-full min-h-[40px] overflow-visible">${fLogosHTML}</div>
+                        </footer>
+                    </div>
+                </div>`;
+
+                // BACK
+                batchHTML += `
+                <div id="cert-back${idSuffix}" class="certificate-page relative w-[1122px] h-[793px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] shrink-0 bg-white text-slate-900 overflow-hidden box-border border border-slate-100 mb-20 break-after-page" style="${bgStyle}">
+                    <div class="absolute inset-0 pointer-events-none opacity-[0.06]">${patternSVG}</div>
+                    <div class="absolute left-0 top-0 w-8 h-full shadow-inner" style="background-color: ${primaryC}"></div>
+                    <div class="absolute right-0 top-0 w-8 h-full opacity-10" style="background-color: ${primaryC}"></div>
+                    
+                    <div class="p-16 h-full flex flex-col justify-between box-border text-left z-10 relative">
+                        <div class="grid grid-cols-2 gap-16 h-full min-h-0">
+                            <div class="flex flex-col h-full overflow-hidden">
+                               <div class="flex-1 overflow-y-auto custom-scroll pr-4 mb-4 min-h-0">
+                                  <div class="flex items-center gap-4 mb-6 border-b-4 pb-4 shrink-0" style="border-color: ${hbColor}">
+                                     <i data-lucide="book-open" class="w-6 h-6"></i>
+                                     <h4 class="text-lg font-black uppercase tracking-tighter">Grade Curricular</h4>
+                                  </div>
+                                  <pre class="text-[11px] leading-relaxed whitespace-pre-wrap font-sans opacity-95 italic font-medium break-words mb-10">${d.content}</pre>
+                                  <div class="flex items-center gap-4 mb-6 border-b-4 pb-4 shrink-0" style="border-color: ${hbColor}">
+                                     <i data-lucide="users" class="w-6 h-6"></i>
+                                     <h4 class="text-lg font-black uppercase tracking-tighter">Corpo Docente / Ministrantes</h4>
+                                  </div>
+                                  <pre class="text-[11px] leading-relaxed whitespace-pre-wrap font-sans opacity-95 italic font-medium break-words text-slate-900 mb-4">${d.instructorsInfo}</pre>
+                               </div>
+                               <div class="p-6 rounded-2xl border-2 border-slate-100 shrink-0 shadow-sm bg-slate-50/50" style="display: ${legalDisplay}">
+                                  <h4 class="text-[10px] font-black uppercase mb-1.5 flex items-center gap-2 text-slate-700">
+                                    <i data-lucide="shield-alert" class="w-3 h-3"></i> Amparo Legal Brasileiro
+                                  </h4>
+                                  <p class="text-[9px] leading-tight opacity-80 m-0 font-bold italic">${d.lawReference}</p>
+                               </div>
+                            </div>
+                            <div class="flex flex-col justify-between border-l-2 border-slate-100 pl-16 py-2">
+                                <div class="space-y-6 flex-1 overflow-hidden">
+                                    <div class="flex items-start gap-6 shrink-0 max-w-full overflow-hidden">
+                                       <div class="flex flex-col gap-4 shrink-0">${bLogoHTML}</div>
+                                       <div class="text-left flex-1 min-w-0 max-w-full">
+                                         <h4 class="text-lg font-black uppercase m-0 leading-tight break-words-custom">${d.company}</h4>
+                                         <p class="text-[10px] opacity-60 font-bold mt-1 uppercase">${idLabel}: ${d.cnpj}</p>
+                                         <p class="text-[10px] opacity-50 max-w-full leading-snug mt-2 italic break-words-custom">${d.address}</p>
+                                       </div>
+                                    </div>
+                                    <div class="bg-slate-900 text-white p-6 rounded-3xl shadow-xl">
+                                       <h4 class="text-[9px] font-black uppercase tracking-widest mb-4 opacity-70 border-b border-white/20 pb-2 text-center">Desempenho Académico</h4>
+                                       <div class="grid grid-cols-2 gap-4 text-center">
+                                          <div><span class="text-[8px] uppercase font-bold opacity-60 block">Média</span><span class="text-2xl font-black">${sGrade}</span></div>
+                                          <div><span class="text-[8px] uppercase font-bold opacity-60 block">Frequência</span><span class="text-2xl font-black">${sFreq}</span></div>
+                                       </div>
+                                    </div>
+                                    <div class="space-y-4">
+                                      <h4 class="text-xs font-black uppercase border-b border-slate-200 pb-2 m-0 tracking-widest">Audit de Registro</h4>
+                                      <div class="grid grid-cols-1 gap-2 text-center text-slate-800">
+                                        <div class="bg-slate-50 p-4 rounded-xl border-b-2 border-slate-300">
+                                          <span class="text-[8px] font-black block opacity-40 uppercase mb-1">Nº de Registro do Lote</span>
+                                          <span class="text-sm font-black uppercase tracking-widest">${d.regNum || '---'}</span>
+                                        </div>
+                                        <div class="bg-slate-50 p-3 rounded-xl border-b-2 border-slate-300 flex flex-col items-center">
+                                          <span class="text-[8px] font-black block opacity-40 uppercase mb-1">Link para Validação</span>
+                                          <a href="${d.validationLink.startsWith('http') ? d.validationLink : `https://${d.validationLink}`}" target="_blank" class="text-[10px] font-bold text-blue-600 underline break-all max-w-full px-4 italic">${d.validationLink || '---'}</a>
+                                        </div>
+                                      </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            container.innerHTML = batchHTML;
+            lucide.createIcons();
+            updateBatchCounter();
+            
+            // Re-aplicar escala se necessário
+            window.dispatchEvent(new Event('resize'));
+        }
+
+        function handlePrintBatchAll() {
+            // Imprimir todos (estilo padrão)
+            const style = document.createElement('style');
+            style.innerHTML = `@media print { .certificate-page { display: block !important; } }`;
+            document.head.appendChild(style);
+            handleBatchPrintTrigger();
+            setTimeout(() => document.head.removeChild(style), 1000);
+        }
+
+        let currentBatchIndex = 0;
+
+        function navigateBatch(dir) {
+            const list = state.batchList;
+            if (list.length === 0) return;
+            
+            const next = currentBatchIndex + dir;
+            if (next >= 0 && next < list.length) {
+                currentBatchIndex = next;
+                
+                // Scroll para o elemento
+                const el = document.getElementById(`cert-front_batch_${currentBatchIndex}`);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                updateBatchCounter();
+            }
+        }
+        
+        function updateBatchCounter() {
+            const count = state.batchList.length || 0;
+            const current = count > 0 ? currentBatchIndex + 1 : 0;
+            document.getElementById('batch-counter').innerText = `Visualizando ${current} de ${count}`;
+        }
+
+        function handlePrintCurrentBatch() {
+            if (state.batchList.length === 0) return;
+            
+            // Técnica: Ocultar todos exceto o atual via CSS temporário
+            const currentIndex = currentBatchIndex;
+            const style = document.createElement('style');
+            style.id = 'temp-print-style';
+            // Oculta todos os batch items
+            style.innerHTML = `
+                @media print { 
+                    .certificate-page { display: none !important; } 
+                    #cert-front_batch_${currentIndex}, #cert-back_batch_${currentIndex} { display: block !important; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            handleBatchPrintTrigger();
+            
+            // Remove o estilo após a impressão (ou cancelamento)
+            // Timeout para garantir que o diálogo de impressão abriu
+            setTimeout(() => {
+                const el = document.getElementById('temp-print-style');
+                if(el) el.remove();
+            }, 1000);
+        }
+
+        // --- MANIPULAÇÃO DE DADOS E EVENTOS EXISTENTES ---
 
         function handleLogoUpload(input, type) {
             const files = Array.from(input.files);
@@ -809,10 +1191,14 @@
             updateVisuals();
         }
 
-        function updateData(k, v) { state.data[k] = v; updateVisuals(); }
-        function setTrait(id) { state.activeTrait = id; renderSelectorUI(); updateVisuals(); }
-        function setPalette(id) { state.activePalette = id; renderSelectorUI(); updateVisuals(); }
-        function setFont(id) { state.activeFont = id; renderSelectorUI(); updateVisuals(); }
+        function updateData(k, v) { 
+            state.data[k] = v; 
+            if(state.isBatchMode) renderBatchDOM(); // Se estiver em lote, re-renderiza tudo
+            else updateVisuals(); 
+        }
+        function setTrait(id) { state.activeTrait = id; renderSelectorUI(); state.isBatchMode ? renderBatchDOM() : updateVisuals(); }
+        function setPalette(id) { state.activePalette = id; renderSelectorUI(); state.isBatchMode ? renderBatchDOM() : updateVisuals(); }
+        function setFont(id) { state.activeFont = id; renderSelectorUI(); state.isBatchMode ? renderBatchDOM() : updateVisuals(); }
 
         function toggleLayout(mode) {
             state.layout = mode;
@@ -832,12 +1218,14 @@
         }
 
         function updateVisuals() {
+            // Só atualiza os IDs únicos se NÃO estiver em modo Batch para economizar recursos e evitar erros
+            if (state.isBatchMode) return;
+
             const trait = traits[state.activeTrait];
             const palette = palettes[state.activePalette];
             const font = fonts[state.activeFont];
             const d = state.data;
             const primaryC = palette.primary;
-            const titleC = palette.title || primaryC; // Fallback para primary se title não existir
 
             const certFront = document.getElementById('cert-front');
             const certBack = document.getElementById('cert-back');
@@ -848,17 +1236,11 @@
             document.getElementById('front-ornaments').innerHTML = getOrnateDetails(trait.frame, primaryC);
             document.getElementById('front-border').style.borderColor = primaryC + (palette.dark ? '20' : '15');
             document.getElementById('front-inner-line').style.borderColor = primaryC;
-            
-            // Título com cor diferenciada
-            document.getElementById('cert-title').style.color = titleC;
-            
+            document.getElementById('cert-title').style.color = primaryC;
             document.getElementById('display-company').style.color = primaryC;
             document.getElementById('display-studentName').style.color = primaryC;
             document.getElementById('display-courseName').style.color = primaryC;
-            
-            // A linha de destaque abaixo do título acompanha a cor do título
-            document.getElementById('front-accent-line').style.backgroundColor = titleC;
-            
+            document.getElementById('front-accent-line').style.backgroundColor = primaryC;
             document.getElementById('back-accent-bar').style.backgroundColor = primaryC;
             document.getElementById('back-accent-bar-right').style.backgroundColor = primaryC;
             
@@ -874,8 +1256,10 @@
                 else { sigLine.style.backgroundColor = 'rgba(0,0,0,0.4)'; }
             }
 
+            const idLabel = d.issuerType === 'PF' ? 'CPF' : 'CNPJ';
+
             document.getElementById('display-company').innerText = d.company;
-            document.getElementById('display-cnpj').innerText = 'CNPJ: ' + d.cnpj;
+            document.getElementById('display-cnpj').innerText = idLabel + ': ' + d.cnpj;
             document.getElementById('display-studentName').innerText = d.studentName;
             document.getElementById('display-studentId').innerText = d.studentId;
             document.getElementById('display-courseName').innerText = d.courseName;
@@ -895,7 +1279,6 @@
             linkEl.innerText = d.validationLink || '---';
             linkEl.href = d.validationLink.startsWith('http') ? d.validationLink : `https://${d.validationLink}`;
 
-            // Lógica para Ocultar/Exibir Amparo Legal
             const legalBox = document.getElementById('legal-box');
             if (d.lawReference && d.lawReference !== 'none') {
                 legalBox.classList.remove('hidden');
@@ -905,7 +1288,7 @@
             }
 
             document.getElementById('display-company-back').innerText = d.company;
-            document.getElementById('display-cnpj-back').innerText = 'CNPJ: ' + d.cnpj;
+            document.getElementById('display-cnpj-back').innerText = idLabel + ': ' + d.cnpj;
             document.getElementById('display-address-back').innerText = d.address;
 
             const sigImg = document.getElementById('display-sig');
@@ -931,85 +1314,89 @@
         const canvas = document.getElementById('sig-canvas');
         const ctx = canvas.getContext('2d');
         let drawing = false;
+        let lastCanvasWidth = 0;
+        let lastCanvasHeight = 0;
+
         function resizeCanvas() { 
+            const width = canvas.offsetWidth;
+            const height = canvas.offsetHeight;
+
+            // Se o tamanho não mudou, não faz nada (evita limpar ao rolar no mobile)
+            if (width === lastCanvasWidth && height === lastCanvasHeight) return;
+
+            lastCanvasWidth = width;
+            lastCanvasHeight = height;
+
             const ratio = (window.devicePixelRatio || 1) * 3; 
-            canvas.width = canvas.offsetWidth * ratio; 
-            canvas.height = canvas.offsetHeight * ratio; 
+            canvas.width = width * ratio; 
+            canvas.height = height * ratio; 
             ctx.scale(ratio, ratio); 
             ctx.lineCap = 'round'; ctx.lineJoin = 'round'; 
             ctx.lineWidth = 2.5; ctx.strokeStyle = '#000000'; 
+
+            // Restaura a assinatura se existir
+            if (state.signature) {
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0, width, height);
+                };
+                img.src = state.signature;
+                document.getElementById('sig-placeholder').classList.add('hidden');
+            }
         }
+
         canvas.addEventListener('mousedown', () => { drawing = true; document.getElementById('sig-placeholder').classList.add('hidden'); });
         canvas.addEventListener('mousemove', (e) => { if (!drawing) return; const rect = canvas.getBoundingClientRect(); ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top); ctx.stroke(); ctx.beginPath(); ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top); });
-        window.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); state.signature = canvas.toDataURL('image/png', 1.0); updateVisuals(); });
+        window.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); state.signature = canvas.toDataURL('image/png', 1.0); if(state.isBatchMode) renderBatchDOM(); else updateVisuals(); });
         canvas.addEventListener('touchstart', (e) => { e.preventDefault(); drawing = true; document.getElementById('sig-placeholder').classList.add('hidden'); });
         canvas.addEventListener('touchmove', (e) => { if (!drawing) return; e.preventDefault(); const rect = canvas.getBoundingClientRect(); const t = e.touches[0]; ctx.lineTo(t.clientX - rect.left, t.clientY - rect.top); ctx.stroke(); ctx.beginPath(); ctx.moveTo(t.clientX - rect.left, t.clientY - rect.top); });
-        canvas.addEventListener('touchend', () => { drawing = false; ctx.beginPath(); state.signature = canvas.toDataURL('image/png', 1.0); updateVisuals(); });
-        document.getElementById('clear-sig').onclick = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); state.signature = null; document.getElementById('sig-placeholder').classList.remove('hidden'); updateVisuals(); };
+        canvas.addEventListener('touchend', () => { drawing = false; ctx.beginPath(); state.signature = canvas.toDataURL('image/png', 1.0); if(state.isBatchMode) renderBatchDOM(); else updateVisuals(); });
+        document.getElementById('clear-sig').onclick = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); state.signature = null; document.getElementById('sig-placeholder').classList.remove('hidden'); if(state.isBatchMode) renderBatchDOM(); else updateVisuals(); };
 
-        // Auto-Resize Inteligente para Mobile e Desktop
+        // Auto-Resize Inteligente
         function autoResizePreview() {
             const container = document.getElementById('preview-area-wrapper');
             const inner = document.getElementById('preview-inner');
-            if (!container || !inner) return;
-
-            // Detecta largura disponível real
-            const availableWidth = container.offsetWidth - 40; // margem segura
-            const availableHeight = container.offsetHeight - 40;
+            const batchContainer = document.getElementById('batch-container');
             
-            // Largura do certificado: 1122px (+ gap se for side-by-side)
+            if (!container) return;
+            
+            // Escolhe o elemento ativo
+            const target = state.isBatchMode ? batchContainer : inner;
+            if(!target || target.classList.contains('hidden')) return;
+
+            const availableWidth = container.offsetWidth - 40; 
+            const availableHeight = container.offsetHeight - 40;
             const certWidth = 1122;
             const certHeight = 793;
 
             let scale;
 
-            // Se for mobile (largura pequena), força uma lógica diferente
             if (window.innerWidth < 1024) {
-                // No mobile, a escala é baseada apenas na largura da tela
-                scale = Math.min(availableWidth / certWidth, 0.85); // Max 0.85 pra não ficar gigante
-                // Ajusta padding do inner
-                inner.style.padding = "20px";
-                inner.style.gap = "20px";
+                scale = Math.min(availableWidth / certWidth, 0.85); 
+                target.style.padding = "20px";
+                target.style.gap = "20px";
             } else {
-                // Desktop
-                if (state.layout === 'side') {
-                    // Tenta caber 2 lado a lado (aprox 2300px)
+                if (state.layout === 'side' && !state.isBatchMode) {
                     scale = Math.min(availableWidth / (certWidth * 2.1), 0.7);
                 } else {
-                    // Stacked no desktop: baseia na altura ou largura
+                    // Stacked ou Batch
                     scale = Math.min(availableWidth / certWidth, availableHeight / certHeight, 0.7);
                 }
             }
             
-            // Limites de segurança
             if (scale < 0.15) scale = 0.15;
-
-            inner.style.transform = `scale(${scale})`;
+            target.style.transform = `scale(${scale})`;
             
-            // Ajusta altura do container mobile se necessário para evitar corte
-            if (window.innerWidth < 1024) {
-                // Calcula altura ocupada pelo conteúdo escalado
-                const contentHeight = (certHeight * 2 + 100) * scale;
-                // Não precisamos forçar altura aqui pois o container é flex-auto, mas ajuda no debug
-            }
-
             resizeCanvas();
         }
 
         window.onload = () => {
-            getDeviceId(); // Inicializa ID
-            updateLicenseUI(); // Inicializa UI da Licença
-            lucide.createIcons(); 
-            renderSelectorUI(); 
-            renderInputs(); 
-            resizeCanvas(); 
-            updateVisuals();
-            
-            // Event Listeners para resize robusto
+            getDeviceId(); updateLicenseUI();
+            lucide.createIcons(); renderSelectorUI(); renderInputs(); 
+            resizeCanvas(); updateVisuals();
             window.addEventListener('resize', autoResizePreview);
-            // Chama uma vez logo no início
             autoResizePreview();
-            // E outra vez após um pequeno delay para garantir renderização de fontes
             setTimeout(autoResizePreview, 500);
         };
     </script>
