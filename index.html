@@ -650,21 +650,21 @@
         ];
 
         const palettes = [
-            { id: 0, name: 'Ouro Real', primary: '#854d0e', bg: '#ffffff', dark: false },
-            { id: 1, name: 'Safira Marinho', primary: '#1e3a8a', bg: '#f8fafc', dark: false },
-            { id: 2, name: 'Esmeralda', primary: '#064e3b', bg: '#f0fdf4', dark: false },
-            { id: 3, name: 'Obsidiana Ouro', primary: '#fbbf24', bg: '#0f172a', dark: true },
-            { id: 4, name: 'Rubi Diplomata', primary: '#991b1b', bg: '#fffafb', dark: false },
-            { id: 5, name: 'Metal Prata', primary: '#334155', bg: '#ffffff', dark: false },
-            { id: 6, name: 'Ciano Cyber', primary: '#22d3ee', bg: '#020617', dark: true },
-            { id: 7, name: 'Vinho Realeza', primary: '#7f1d1d', bg: '#fdf2f2', dark: false },
-            { id: 8, name: 'Púrpura Aura', primary: '#a78bfa', bg: '#020617', dark: true },
-            { id: 9, name: 'Carbono Tech', primary: '#94a3b8', bg: '#171717', dark: true },
-            { id: 10, name: 'Bronze Antigo', primary: '#78350f', bg: '#fffbeb', dark: false },
-            { id: 11, name: 'Ametista Real', primary: '#581c87', bg: '#faf5ff', dark: false },
-            { id: 12, name: 'Cobre Metálico', primary: '#9a3412', bg: '#fff7ed', dark: false },
-            { id: 13, name: 'Cinza Ardósia', primary: '#475569', bg: '#f1f5f9', dark: false },
-            { id: 14, name: 'Verde Oliva', primary: '#365314', bg: '#ecfccb', dark: false }
+            { id: 0, name: 'Ouro Real', primary: '#854d0e', title: '#ca8a04', bg: '#ffffff', dark: false },
+            { id: 1, name: 'Safira Marinho', primary: '#1e3a8a', title: '#b45309', bg: '#f8fafc', dark: false },
+            { id: 2, name: 'Esmeralda', primary: '#064e3b', title: '#d97706', bg: '#f0fdf4', dark: false },
+            { id: 3, name: 'Obsidiana Ouro', primary: '#fbbf24', title: '#ffffff', bg: '#0f172a', dark: true },
+            { id: 4, name: 'Rubi Diplomata', primary: '#991b1b', title: '#b91c1c', bg: '#fffafb', dark: false },
+            { id: 5, name: 'Metal Prata', primary: '#334155', title: '#0f172a', bg: '#ffffff', dark: false },
+            { id: 6, name: 'Ciano Cyber', primary: '#22d3ee', title: '#ffffff', bg: '#020617', dark: true },
+            { id: 7, name: 'Vinho Realeza', primary: '#7f1d1d', title: '#9f1239', bg: '#fdf2f2', dark: false },
+            { id: 8, name: 'Púrpura Aura', primary: '#a78bfa', title: '#ffffff', bg: '#020617', dark: true },
+            { id: 9, name: 'Carbono Tech', primary: '#94a3b8', title: '#e2e8f0', bg: '#171717', dark: true },
+            { id: 10, name: 'Bronze Antigo', primary: '#78350f', title: '#92400e', bg: '#fffbeb', dark: false },
+            { id: 11, name: 'Ametista Real', primary: '#581c87', title: '#7e22ce', bg: '#faf5ff', dark: false },
+            { id: 12, name: 'Cobre Metálico', primary: '#9a3412', title: '#c2410c', bg: '#fff7ed', dark: false },
+            { id: 13, name: 'Cinza Ardósia', primary: '#475569', title: '#1e293b', bg: '#f1f5f9', dark: false },
+            { id: 14, name: 'Verde Oliva', primary: '#365314', title: '#4d7c0f', bg: '#ecfccb', dark: false }
         ];
 
         const fonts = [
@@ -837,6 +837,7 @@
             const font = fonts[state.activeFont];
             const d = state.data;
             const primaryC = palette.primary;
+            const titleC = palette.title || primaryC; // Fallback para primary se title não existir
 
             const certFront = document.getElementById('cert-front');
             const certBack = document.getElementById('cert-back');
@@ -847,11 +848,17 @@
             document.getElementById('front-ornaments').innerHTML = getOrnateDetails(trait.frame, primaryC);
             document.getElementById('front-border').style.borderColor = primaryC + (palette.dark ? '20' : '15');
             document.getElementById('front-inner-line').style.borderColor = primaryC;
-            document.getElementById('cert-title').style.color = primaryC;
+            
+            // Título com cor diferenciada
+            document.getElementById('cert-title').style.color = titleC;
+            
             document.getElementById('display-company').style.color = primaryC;
             document.getElementById('display-studentName').style.color = primaryC;
             document.getElementById('display-courseName').style.color = primaryC;
-            document.getElementById('front-accent-line').style.backgroundColor = primaryC;
+            
+            // A linha de destaque abaixo do título acompanha a cor do título
+            document.getElementById('front-accent-line').style.backgroundColor = titleC;
+            
             document.getElementById('back-accent-bar').style.backgroundColor = primaryC;
             document.getElementById('back-accent-bar-right').style.backgroundColor = primaryC;
             
