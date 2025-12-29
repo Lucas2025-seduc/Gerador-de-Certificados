@@ -317,14 +317,27 @@
                         <i data-lucide="pen-tool" class="w-4 h-4"></i> Assinatura
                     </h2>
                     <div class="relative w-full h-32 bg-white border-2 border-slate-700 rounded-xl overflow-hidden shadow-inner ring-offset-1 focus-within:ring-2 ring-blue-500 touch-none">
-                        <canvas id="sig-canvas" class="w-full h-full touch-none"></canvas>
-                        <div id="sig-placeholder" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30 text-center px-4">
+                        <canvas id="sig-canvas" class="w-full h-full touch-none z-10 relative"></canvas>
+                        <div id="sig-placeholder" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30 text-center px-4 z-0">
                             <span class="text-[10px] font-black uppercase text-slate-900 leading-tight">Desenhe Aqui</span>
                         </div>
-                        <button id="clear-sig" class="absolute top-2 right-2 p-2 bg-slate-100 hover:bg-red-100 text-slate-500 rounded-lg shadow-sm touch-manipulation">
+                        <!-- Botão com Z-Index aumentado e cursor pointer, evento ajustado -->
+                        <button id="clear-sig" type="button" class="absolute top-2 right-2 p-3 bg-slate-100 hover:bg-red-100 text-slate-500 rounded-lg shadow-sm touch-manipulation z-50 cursor-pointer transition-colors" title="Limpar Assinatura">
                             <i data-lucide="eraser" class="w-4 h-4"></i>
                         </button>
                     </div>
+                    
+                    <!-- NOVO: Botão de Importar Assinatura -->
+                    <div class="flex items-center gap-2 mt-2">
+                         <button onclick="document.getElementById('sig-upload').click()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-[10px] uppercase font-bold transition-colors flex items-center justify-center gap-2 shadow-lg">
+                             <i data-lucide="upload" class="w-3 h-3"></i> Importar Assinatura
+                         </button>
+                         <input type="file" id="sig-upload" class="hidden" accept="image/*" onchange="handleSignatureUpload(this)">
+                    </div>
+                    <p class="text-[9px] text-slate-500 italic text-center mt-1 leading-tight">
+                        <i data-lucide="info" class="w-3 h-3 inline mr-1 text-blue-400"></i>
+                        Para melhor resultado, use uma imagem com <strong>fundo branco</strong> e <strong>tinta preta</strong>. O sistema removerá o fundo automaticamente.
+                    </p>
                 </section>
 
                 <!-- Personalização Visual -->
@@ -339,7 +352,8 @@
                     </div>
                     <div>
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 border-b border-slate-800 pb-1">Cores</label>
-                        <div id="palette-grid" class="grid grid-cols-5 gap-2 max-h-48 overflow-y-auto pr-1 custom-scroll"></div>
+                        <!-- Alterado de grid-cols-5 para flex flex-wrap para acomodar botões menores -->
+                        <div id="palette-grid" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1 custom-scroll justify-center"></div>
                     </div>
                 </section>
 
@@ -435,15 +449,18 @@
                         </main>
 
                         <footer class="w-full flex flex-col items-center justify-center shrink-0">
-                            <div id="loc-date-box" class="flex items-center justify-center gap-2 text-sm font-black opacity-80 mb-3 border-y border-black/5 py-1 uppercase tracking-[0.2em] w-full max-w-[500px]">
+                            <!-- Aumentado mb-3 para mb-6 para dar mais espaço -->
+                            <div id="loc-date-box" class="flex items-center justify-center gap-2 text-sm font-black opacity-80 mb-6 border-y border-black/5 py-1 uppercase tracking-[0.2em] w-full max-w-[500px]">
                                <i data-lucide="map-pin" class="w-4 h-4"></i>
                                <span id="display-location-date">LOCALIDADE, DATA</span>
                             </div>
                             <div class="flex flex-col items-center w-full border-t border-slate-500/10 pt-2 mb-3">
                                 <div class="flex flex-col items-center w-full max-w-[320px]">
-                                    <div class="h-12 w-full flex items-end justify-center relative mb-1">
-                                        <img id="display-sig" class="hidden h-18 absolute bottom-1 contrast-125 brightness-50" src="" alt="Assinatura">
-                                        <div id="sig-line" class="w-full h-[1.5px] bg-black/40 transition-colors"></div>
+                                    <!-- Aumentado h-12 para h-16 para caber melhor a assinatura -->
+                                    <div class="h-16 w-full flex items-end justify-center relative mb-1">
+                                        <!-- Definido max-h-16 e bottom-0.5 para garantir que não suba -->
+                                        <img id="display-sig" class="hidden max-h-16 h-auto absolute bottom-0.5 contrast-125 brightness-50 object-contain z-10" src="" alt="Assinatura">
+                                        <div id="sig-line" class="w-full h-[1.5px] bg-black/40 transition-colors z-20"></div>
                                     </div>
                                     <p id="display-instructor" class="text-sm font-black uppercase m-0 leading-none text-center">NOME RESPONSÁVEL</p>
                                     <p id="display-instructorTitle" class="text-[9px] opacity-60 uppercase font-bold m-0 mt-1 leading-none text-center">DIRETOR GERAL</p>
@@ -649,6 +666,7 @@
             data: {
                 studentName: 'NOME COMPLETO DO ALUNO PARA CERTIFICAÇÃO', studentId: '000.000.000-00', 
                 courseName: 'ENGENHARIA DE SOFTWARE E INTELIGÊNCIA ARTIFICIAL', hours: '360',
+                startDate: '', // Novo campo
                 endDate: '30/06/2025', date: new Date().toLocaleDateString('pt-BR'),
                 company: 'CENTRO NACIONAL DE ENSINO E TECNOLOGIA', cnpj: '12.345.678/0001-90',
                 address: 'Av. Paulista, 2000 - Bela Vista, São Paulo - SP', location: 'São Paulo - SP',
@@ -757,7 +775,8 @@
         function renderSelectorUI() {
             document.getElementById('trait-grid').innerHTML = traits.map(t => `<button onclick="setTrait(${t.id})" class="p-2 text-[9px] font-bold border rounded-lg transition-all uppercase truncate ${state.activeTrait === t.id ? 'bg-blue-600 text-white border-blue-400 shadow-lg' : 'bg-slate-950 text-slate-500 border-slate-800 hover:text-slate-300'}">${t.name}</button>`).join('');
             document.getElementById('font-grid').innerHTML = fonts.map(f => `<button onclick="setFont(${f.id})" class="p-2 text-[9px] font-bold border rounded-lg transition-all uppercase truncate ${state.activeFont === f.id ? 'bg-blue-600 text-white border-blue-400 shadow-lg' : 'bg-slate-950 text-slate-500 border-slate-800 hover:text-slate-300'}" style="font-family: ${f.family.split(',')[0]}">${f.name}</button>`).join('');
-            document.getElementById('palette-grid').innerHTML = palettes.map(p => `<button onclick="setPalette(${p.id})" class="w-full aspect-square rounded-full border-2 transition-all flex items-center justify-center ${state.activePalette === p.id ? 'border-white scale-110 shadow-lg' : 'border-slate-800'}" style="background-color: ${p.primary}">${state.activePalette === p.id ? '<i data-lucide="check" class="text-white w-3 h-3"></i>' : ''}</button>`).join('');
+            // Botões de cor reduzidos (w-8 h-8)
+            document.getElementById('palette-grid').innerHTML = palettes.map(p => `<button onclick="setPalette(${p.id})" class="w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${state.activePalette === p.id ? 'border-white scale-110 shadow-lg' : 'border-slate-800'}" style="background-color: ${p.primary}">${state.activePalette === p.id ? '<i data-lucide="check" class="text-white w-3 h-3"></i>' : ''}</button>`).join('');
             lucide.createIcons();
         }
 
@@ -784,7 +803,13 @@
                 { label: 'Localidade', name: 'location' }, 
                 { label: 'Nome Aluno', name: 'studentName', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
                 { label: 'CPF', name: 'studentId', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
-                { label: 'Conclusão', name: 'endDate' }, { label: 'Horas', name: 'hours' }, { label: 'Emissão', name: 'date' }, { label: 'Responsável', name: 'instructor' }, { label: 'Cargo', name: 'instructorTitle' }
+                // Adicionado Data de Início e renomeados labels de datas
+                { label: 'Data de Início (Opcional)', name: 'startDate' },
+                { label: 'Data de Conclusão', name: 'endDate' }, 
+                { label: 'Horas', name: 'hours' }, 
+                { label: 'Data de Emissão', name: 'date' }, 
+                { label: 'Responsável', name: 'instructor' }, 
+                { label: 'Cargo', name: 'instructorTitle' }
             ];
             
             // Selector de Tipo de Curso
@@ -928,6 +953,14 @@
             const primaryC = palette.primary;
             const d = state.data;
 
+            // Lógica de Datas Dinâmica (Batch)
+            let dateText = '';
+            if (d.startDate && d.startDate.trim() !== '') {
+                dateText = `realizado no período de <strong>${d.startDate}</strong> a <strong>${d.endDate}</strong>`;
+            } else {
+                dateText = `concluído em <strong>${d.endDate}</strong>`;
+            }
+
             // Prepara estilos comuns
             const bgStyle = `background-color: ${palette.bg}; color: ${palette.dark ? '#ffffff' : '#0f172a'}; font-family: ${font.family};`;
             const patternSVG = getTraitSVG(trait.pattern, primaryC);
@@ -996,21 +1029,21 @@
                                 <div class="w-full flex flex-col items-center gap-2">
                                     <p class="text-[17px] leading-tight opacity-95 m-0 font-medium">Portador(a) do CPF <strong class="font-bold">${student.id}</strong>, concluiu com êxito o ${d.courseType} de</p>
                                     <h3 class="font-black uppercase text-[26px] leading-tight transition-colors m-0 break-words-custom w-full max-w-[90%]" style="color: ${primaryC}">${d.courseName}</h3>
-                                    <p class="text-[17px] leading-tight opacity-95 m-0 font-medium">concluído em <strong>${d.endDate}</strong>, <br> totalizando uma carga horária de <strong>${d.hours}</strong> horas.</p>
+                                    <p class="text-[17px] leading-tight opacity-95 m-0 font-medium">${dateText}, <br> totalizando uma carga horária de <strong>${d.hours}</strong> horas.</p>
                                 </div>
                             </div>
                         </main>
 
                         <footer class="w-full flex flex-col items-center justify-center shrink-0">
-                            <div class="flex items-center justify-center gap-2 text-sm font-black opacity-80 mb-3 border-y border-black/5 py-1 uppercase tracking-[0.2em] w-full max-w-[500px]">
+                            <div class="flex items-center justify-center gap-2 text-sm font-black opacity-80 mb-6 border-y border-black/5 py-1 uppercase tracking-[0.2em] w-full max-w-[500px]">
                                <i data-lucide="map-pin" class="w-4 h-4"></i>
                                <span>${d.location}, EM ${d.date}</span>
                             </div>
                             <div class="flex flex-col items-center w-full border-t border-slate-500/10 pt-2 mb-3">
                                 <div class="flex flex-col items-center w-full max-w-[320px]">
-                                    <div class="h-12 w-full flex items-end justify-center relative mb-1">
-                                        ${state.signature ? `<img class="h-18 absolute bottom-1 contrast-125 brightness-50" src="${state.signature}" style="${sigFilter}">` : ''}
-                                        <div class="w-full h-[1.5px] transition-colors" style="background-color: ${sigLineColor}"></div>
+                                    <div class="h-16 w-full flex items-end justify-center relative mb-1">
+                                        ${state.signature ? `<img class="max-h-16 h-auto absolute bottom-0.5 contrast-125 brightness-50 object-contain z-10" src="${state.signature}" style="${sigFilter}">` : ''}
+                                        <div class="w-full h-[1.5px] transition-colors z-20" style="background-color: ${sigLineColor}"></div>
                                     </div>
                                     <p class="text-sm font-black uppercase m-0 leading-none text-center">${d.instructor}</p>
                                     <p class="text-[9px] opacity-60 uppercase font-bold m-0 mt-1 leading-none text-center">${d.instructorTitle}</p>
@@ -1295,8 +1328,19 @@
             document.getElementById('display-studentId').innerText = d.studentId;
             document.getElementById('display-courseType').innerText = d.courseType || 'curso';
             document.getElementById('display-courseName').innerText = d.courseName;
-            document.getElementById('display-endDate').innerText = d.endDate;
-            document.getElementById('display-hours').innerText = d.hours;
+            
+            // Lógica de Datas Dinâmica (Single)
+            const durationText = document.getElementById('cert-duration-text');
+            if (d.startDate && d.startDate.trim() !== '') {
+                durationText.innerHTML = `realizado no período de <strong>${d.startDate}</strong> a <strong>${d.endDate}</strong>, <br> totalizando uma carga horária de <strong>${d.hours}</strong> horas.`;
+            } else {
+                durationText.innerHTML = `concluído em <strong>${d.endDate}</strong>, <br> totalizando uma carga horária de <strong>${d.hours}</strong> horas.`;
+            }
+
+            // CORREÇÃO: Removidas as chamadas para atualizar elementos que foram sobrescritos pelo innerHTML acima
+            // document.getElementById('display-hours').innerText = d.hours; (Removido)
+            // document.getElementById('display-endDate').innerText = d.endDate; (Removido)
+
             document.getElementById('display-instructor').innerText = d.instructor;
             document.getElementById('display-instructorTitle').innerText = d.instructorTitle;
             document.getElementById('display-location-date').innerText = `${d.location}, EM ${d.date}`.toUpperCase();
@@ -1382,7 +1426,97 @@
         canvas.addEventListener('touchstart', (e) => { e.preventDefault(); drawing = true; document.getElementById('sig-placeholder').classList.add('hidden'); });
         canvas.addEventListener('touchmove', (e) => { if (!drawing) return; e.preventDefault(); const rect = canvas.getBoundingClientRect(); const t = e.touches[0]; ctx.lineTo(t.clientX - rect.left, t.clientY - rect.top); ctx.stroke(); ctx.beginPath(); ctx.moveTo(t.clientX - rect.left, t.clientY - rect.top); });
         canvas.addEventListener('touchend', () => { drawing = false; ctx.beginPath(); state.signature = canvas.toDataURL('image/png', 1.0); if(state.isBatchMode) renderBatchDOM(); else updateVisuals(); });
-        document.getElementById('clear-sig').onclick = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); state.signature = null; document.getElementById('sig-placeholder').classList.remove('hidden'); if(state.isBatchMode) renderBatchDOM(); else updateVisuals(); };
+        
+        // --- MELHORIA DO BOTÃO APAGAR ---
+        const clearBtn = document.getElementById('clear-sig');
+        
+        // Impede que o toque no botão seja interpretado como início de desenho no canvas
+        const stopProp = (e) => e.stopPropagation();
+        clearBtn.addEventListener('mousedown', stopProp);
+        clearBtn.addEventListener('touchstart', stopProp);
+        
+        // Lógica de limpar
+        clearBtn.onclick = (e) => { 
+            e.preventDefault();
+            e.stopPropagation();
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            state.signature = null; 
+            document.getElementById('sig-placeholder').classList.remove('hidden'); 
+            drawing = false; // Reseta estado de desenho
+            if(state.isBatchMode) renderBatchDOM(); else updateVisuals(); 
+        };
+
+        // --- Nova Função de Importação de Assinatura ---
+        function handleSignatureUpload(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        // Lógica de remoção de fundo branco
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCanvas.width = img.width;
+                        tempCanvas.height = img.height;
+                        tempCtx.drawImage(img, 0, 0);
+                        
+                        const imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                        const data = imgData.data;
+                        
+                        // Limiar para o "Branco" (0-255)
+                        const threshold = 180; 
+                        
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i];
+                            const g = data[i + 1];
+                            const b = data[i + 2];
+                            
+                            // Se o pixel for claro o suficiente, torna transparente
+                            if (r > threshold && g > threshold && b > threshold) {
+                                data[i + 3] = 0; 
+                            }
+                        }
+                        
+                        tempCtx.putImageData(imgData, 0, 0);
+                        
+                        // --- CORREÇÃO DE ESCALA AQUI ---
+                        // 1. Resetar transformação para desenhar em pixels físicos (1:1)
+                        ctx.save();
+                        ctx.setTransform(1, 0, 0, 1, 0, 0);
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        
+                        // 2. Calcular proporção usando as dimensões físicas do canvas
+                        const hRatio = canvas.width / img.width;
+                        const vRatio = canvas.height / img.height;
+                        const ratio = Math.min(hRatio, vRatio); // Maximiza a imagem no espaço disponível
+                        
+                        // 3. Centralizar
+                        const centerShift_x = (canvas.width - img.width * ratio) / 2;
+                        const centerShift_y = (canvas.height - img.height * ratio) / 2;
+                        
+                        // 4. Desenhar imagem processada
+                        ctx.drawImage(tempCanvas, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
+                        
+                        // 5. Salvar estado final
+                        state.signature = canvas.toDataURL('image/png', 1.0);
+                        
+                        // 6. Restaurar contexto para desenho manual futuro
+                        ctx.restore();
+                        
+                        // Forçar reconfiguração do canvas para garantir que o scale volte ao correto para novos traços
+                        lastCanvasWidth = 0; 
+                        resizeCanvas(); 
+                        
+                        // Atualizar UI
+                        document.getElementById('sig-placeholder').classList.add('hidden');
+                        if(state.isBatchMode) renderBatchDOM(); else updateVisuals();
+                    }
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+            input.value = ""; 
+        }
 
         // Auto-Resize Inteligente
         function autoResizePreview() {
