@@ -9,6 +9,8 @@
     <meta name="theme-color" content="#020617">
     <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
+    <!-- Ícone padrão para navegador -->
+    <link rel="icon" type="image/png" href="icon-192.png">
     
     <!-- Configurações iOS (Safari) - Remove barras e define estilo -->
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -570,8 +572,9 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          // Placeholder para registro de SW se necessário
-          console.log('SW pronto para registro (PWA)');
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW registrado!', reg))
+            .catch(err => console.log('Erro no SW:', err));
         });
       }
     </script>
@@ -1158,66 +1161,6 @@
             
             // Re-aplicar escala se necessário
             window.dispatchEvent(new Event('resize'));
-        }
-
-        function handlePrintBatchAll() {
-            // Imprimir todos (estilo padrão)
-            const style = document.createElement('style');
-            style.innerHTML = `@media print { .certificate-page { display: block !important; } }`;
-            document.head.appendChild(style);
-            handleBatchPrintTrigger();
-            setTimeout(() => document.head.removeChild(style), 1000);
-        }
-
-        let currentBatchIndex = 0;
-
-        function navigateBatch(dir) {
-            const list = state.batchList;
-            if (list.length === 0) return;
-            
-            const next = currentBatchIndex + dir;
-            if (next >= 0 && next < list.length) {
-                currentBatchIndex = next;
-                
-                // Scroll para o elemento
-                const el = document.getElementById(`cert-front_batch_${currentBatchIndex}`);
-                if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-                updateBatchCounter();
-            }
-        }
-        
-        function updateBatchCounter() {
-            const count = state.batchList.length || 0;
-            const current = count > 0 ? currentBatchIndex + 1 : 0;
-            document.getElementById('batch-counter').innerText = `Visualizando ${current} de ${count}`;
-        }
-
-        function handlePrintCurrentBatch() {
-            if (state.batchList.length === 0) return;
-            
-            // Técnica: Ocultar todos exceto o atual via CSS temporário
-            const currentIndex = currentBatchIndex;
-            const style = document.createElement('style');
-            style.id = 'temp-print-style';
-            // Oculta todos os batch items
-            style.innerHTML = `
-                @media print { 
-                    .certificate-page { display: none !important; } 
-                    #cert-front_batch_${currentIndex}, #cert-back_batch_${currentIndex} { display: block !important; }
-                }
-            `;
-            document.head.appendChild(style);
-            
-            handleBatchPrintTrigger();
-            
-            // Remove o estilo após a impressão (ou cancelamento)
-            // Timeout para garantir que o diálogo de impressão abriu
-            setTimeout(() => {
-                const el = document.getElementById('temp-print-style');
-                if(el) el.remove();
-            }, 1000);
         }
 
         // --- MANIPULAÇÃO DE DADOS E EVENTOS EXISTENTES ---
