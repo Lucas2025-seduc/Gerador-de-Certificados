@@ -3,7 +3,7 @@ const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  // Ícones (você deve adicionar esses arquivos na pasta)
+  // Ícones (você deve adicionar esses arquivos na pasta se existirem)
   // './icon-192.png', 
   // './icon-512.png',
   // Recursos Externos Essenciais (CDNs identificados no HTML)
@@ -52,7 +52,7 @@ self.addEventListener('fetch', (event) => {
         return fetch(event.request).then(
           (response) => {
             // Verifica se a resposta é válida
-            if(!response || response.status !== 200 || response.type !== 'basic' && response.type !== 'cors') {
+            if(!response || response.status !== 200 || (response.type !== 'basic' && response.type !== 'cors')) {
               return response;
             }
 
@@ -62,7 +62,10 @@ self.addEventListener('fetch', (event) => {
             caches.open(CACHE_NAME)
               .then((cache) => {
                 // Cache dinâmico para novos recursos acessados
-                cache.put(event.request, responseToCache);
+                // Verificação extra para evitar erros com POST ou schemes não suportados
+                if (event.request.method === 'GET' && event.request.url.startsWith('http')) {
+                    cache.put(event.request, responseToCache);
+                }
               });
 
             return response;
