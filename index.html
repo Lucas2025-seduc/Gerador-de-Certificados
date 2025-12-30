@@ -7,15 +7,21 @@
     
     <!-- Configurações PWA (Android/Chrome) -->
     <meta name="theme-color" content="#020617">
-    <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <!-- Ícone padrão para navegador -->
-    <link rel="icon" type="image/png" href="icon-192.png">
     
-    <!-- Configurações iOS (Safari) - Remove barras e define estilo -->
+    <!-- Link para o Manifesto (Sem ./ para evitar conflitos de caminho) -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Ícones e Cores -->
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- Configurações iOS (Safari) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="NEXUS">
+    
+    <!-- Configurações Legacy Android -->
+    <meta name="mobile-web-app-capable" content="yes">
     
     <title>NEXUS - GERADOR DE CERTIFICADOS EM LOTE</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,7 +32,6 @@
     
     <style>
         /* --- AJUSTES DE ÁREA SEGURA (NOTCH/ILHA DINÂMICA) --- */
-        /* Adiciona espaçamento no topo apenas se necessário (iOS Fullscreen) */
         .safe-top-padding {
             padding-top: env(safe-area-inset-top, 20px);
         }
@@ -49,10 +54,8 @@
                 print-color-adjust: exact !important;
             }
 
-            /* Esconde Interface */
             .no-print, #sidebar, #main-container > aside, #license-modal, .batch-controls { display: none !important; }
 
-            /* Ajusta Containers */
             #main-container { 
                 display: block !important; 
                 height: auto !important; 
@@ -81,11 +84,9 @@
                 margin: 0 !important;
             }
             
-            /* Garante que se estiver no modo batch, o container single suma e vice versa */
             body.printing-batch #preview-inner { display: none !important; }
             body.printing-single #batch-container { display: none !important; }
 
-            /* Força Quebra de Página Exata */
             .certificate-page {
                 position: relative !important;
                 width: 297mm !important;
@@ -94,8 +95,8 @@
                 padding: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
-                page-break-after: always !important; /* Legado */
-                break-after: page !important;        /* Moderno */
+                page-break-after: always !important;
+                break-after: page !important;
                 page-break-inside: avoid !important;
                 float: none !important;
                 background-color: white !important;
@@ -104,7 +105,6 @@
                 top: 0 !important;
             }
 
-            /* Remove última quebra se necessário */
             .certificate-page:last-child {
                 page-break-after: auto !important;
                 break-after: auto !important;
@@ -122,7 +122,6 @@
         .break-words-custom { word-wrap: break-word; overflow-wrap: break-word; }
         .sig-light-filter { filter: invert(1) brightness(1.8) contrast(1.1) !important; }
 
-        /* Layout Modes (Apenas visualização em tela) */
         .layout-side-by-side { flex-direction: row !important; align-items: flex-start !important; flex-wrap: wrap; justify-content: center; }
         .layout-stacked { flex-direction: column !important; align-items: center !important; }
 
@@ -134,13 +133,8 @@
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #334155; border-radius: 2px; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #3b82f6; cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
 
-        /* Estilos do Modal de Licença */
-        #license-modal {
-            backdrop-filter: blur(8px);
-        }
-        .shake {
-            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
-        }
+        #license-modal { backdrop-filter: blur(8px); }
+        .shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake {
             10%, 90% { transform: translate3d(-1px, 0, 0); }
             20%, 80% { transform: translate3d(2px, 0, 0); }
@@ -148,7 +142,6 @@
             40%, 60% { transform: translate3d(4px, 0, 0); }
         }
         
-        /* Ocultar scrollbar no textarea mas permitir scroll */
         textarea.no-scrollbar::-webkit-scrollbar { display: none; }
         textarea.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -194,7 +187,6 @@
                     Desbloquear Aplicativo
                 </button>
 
-                <!-- Botão Voltar -->
                 <button onclick="document.getElementById('license-modal').classList.add('hidden')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl uppercase tracking-widest text-[10px] transition-colors mt-2 border border-slate-700">
                     Voltar à Tela Inicial
                 </button>
@@ -206,14 +198,12 @@
         </div>
     </div>
 
-    <!-- MAIN CONTAINER - Flex-col no mobile garante a ordem dos filhos -->
+    <!-- MAIN CONTAINER -->
     <div id="main-container" class="flex flex-col lg:flex-row min-h-screen lg:h-screen w-full">
         
-        <!-- Sidebar: Editor (AGORA VEM PRIMEIRO NO CÓDIGO) -->
-        <!-- Adicionei 'safe-top-padding' para respeitar o notch no iPhone em tela cheia -->
-        <aside id="sidebar" class="w-full lg:w-[450px] xl:w-[480px] bg-slate-900 shadow-2xl z-30 lg:overflow-y-auto p-4 md:p-6 safe-top-padding no-print border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col shrink-0 custom-scroll lg:h-full relative">
+        <!-- Sidebar: Editor (PRIMEIRO NO CÓDIGO para ficar no topo no celular) -->
+        <aside id="sidebar" class="w-full lg:w-[450px] xl:w-[480px] bg-slate-900 shadow-2xl z-30 lg:overflow-y-auto p-4 md:p-6 safe-top-padding no-print border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col shrink-0 custom-scroll lg:h-full relative order-1">
             <div class="flex-1 space-y-6 pb-20 lg:pb-0">
-                <!-- Cabeçalho da App -->
                 <div class="flex items-center gap-3 mb-4 pt-2 lg:pt-0">
                     <div class="p-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-500/20">
                         <i data-lucide="award" class="text-white w-6 h-6"></i>
@@ -225,15 +215,12 @@
                     </div>
                 </div>
 
-                <!-- Painel de Status da Licença -->
                 <div id="license-panel" class="mb-6 p-4 rounded-xl bg-slate-950/50 border border-slate-800 shadow-inner relative overflow-hidden group">
                     <div class="absolute top-0 left-0 w-1 h-full bg-orange-500 transition-colors" id="license-indicator-bar"></div>
-                    
                     <div class="flex items-center justify-between mb-2 relative z-10">
                         <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Plano Atual</span>
                         <span id="status-badge" class="text-[9px] font-black uppercase tracking-widest text-orange-400 bg-orange-500/10 px-2 py-1 rounded border border-orange-500/20">Versão Gratuita</span>
                     </div>
-
                     <div id="free-credits-info" class="relative z-10">
                         <div class="flex items-end gap-1 mb-3">
                             <span class="text-3xl font-black text-white leading-none" id="credits-display">1</span>
@@ -243,7 +230,6 @@
                             <i data-lucide="key" class="w-3.5 h-3.5"></i> Obter Licença Permanente
                         </button>
                     </div>
-
                     <div id="premium-info" class="hidden relative z-10">
                         <p class="text-xs text-slate-400 leading-relaxed">
                             <strong class="text-emerald-400">Licença Ativa.</strong> Você tem acesso ilimitado a todos os recursos e emissões de certificados.
@@ -251,7 +237,6 @@
                     </div>
                 </div>
 
-                <!-- BATCH MODE TOGGLE -->
                 <div class="bg-indigo-900/20 p-4 rounded-2xl border border-indigo-500/30 shadow-lg mb-4">
                     <div class="flex items-center justify-between mb-3">
                         <h2 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
@@ -262,7 +247,6 @@
                             <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
                         </label>
                     </div>
-                    
                     <div id="batch-controls" class="hidden space-y-3 transition-all">
                         <div>
                             <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Lista de Alunos (Nome, CPF, Nota, Frequência)</label>
@@ -275,7 +259,6 @@
                     </div>
                 </div>
 
-                <!-- Seletor de Layout (Só aparece se NÃO estiver em lote) -->
                 <section id="layout-controls" class="bg-slate-800/40 p-3 rounded-2xl border border-slate-700/50 hidden lg:block">
                     <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Visualização</label>
                     <div class="flex gap-2">
@@ -288,13 +271,10 @@
                     </div>
                 </section>
 
-                <!-- Gestão de Logos -->
                 <section class="space-y-4 bg-slate-800/30 p-4 rounded-2xl border border-slate-700/50 shadow-lg">
                     <h2 class="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <i data-lucide="image" class="w-4 h-4"></i> Logótipos
                     </h2>
-                    
-                    <!-- Logos Topo -->
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
                             <label class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Topo</label>
@@ -306,16 +286,12 @@
                             <span class="text-[9px] font-bold text-slate-500 uppercase">Adicionar</span>
                         </button>
                         <input type="file" id="header-logo-input" class="hidden" accept="image/*" multiple onchange="handleLogoUpload(this, 'header')">
-                        
                         <div class="bg-slate-950/50 p-2 px-3 rounded-xl border border-slate-800/50 flex items-center gap-3">
                             <label class="text-[8px] font-black text-slate-500 uppercase shrink-0">Tam. <span id="header-logo-size-label" class="text-blue-500 font-mono ml-1">80px</span></label>
                             <input type="range" min="30" max="200" value="80" class="flex-1" oninput="updateLogoSize(this.value, 'header')">
                         </div>
                     </div>
-
                     <div class="h-px bg-slate-700/30"></div>
-
-                    <!-- Logos Rodapé -->
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
                             <label class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Rodapé</label>
@@ -327,7 +303,6 @@
                             <span class="text-[9px] font-bold text-slate-500 uppercase">Adicionar</span>
                         </button>
                         <input type="file" id="footer-logo-input" class="hidden" accept="image/*" multiple onchange="handleLogoUpload(this, 'footer')">
-
                         <div class="bg-slate-950/50 p-2 px-3 rounded-xl border border-slate-800/50 flex items-center gap-3">
                             <label class="text-[8px] font-black text-slate-500 uppercase shrink-0">Tam. <span id="footer-logo-size-label" class="text-blue-500 font-mono ml-1">45px</span></label>
                             <input type="range" min="20" max="120" value="45" class="flex-1" oninput="updateLogoSize(this.value, 'footer')">
@@ -335,7 +310,6 @@
                     </div>
                 </section>
 
-                <!-- Assinatura Digital -->
                 <section class="space-y-3 bg-slate-800/30 p-4 rounded-2xl border border-slate-700/50 shadow-lg">
                     <h2 class="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
                         <i data-lucide="pen-tool" class="w-4 h-4"></i> Assinatura
@@ -345,13 +319,10 @@
                         <div id="sig-placeholder" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30 text-center px-4 z-0">
                             <span class="text-[10px] font-black uppercase text-slate-900 leading-tight">Desenhe Aqui</span>
                         </div>
-                        <!-- Botão com Z-Index aumentado e cursor pointer, evento ajustado -->
                         <button id="clear-sig" type="button" class="absolute top-2 right-2 p-3 bg-slate-100 hover:bg-red-100 text-slate-500 rounded-lg shadow-sm touch-manipulation z-50 cursor-pointer transition-colors" title="Limpar Assinatura">
                             <i data-lucide="eraser" class="w-4 h-4"></i>
                         </button>
                     </div>
-                    
-                    <!-- NOVO: Botão de Importar Assinatura -->
                     <div class="flex items-center gap-2 mt-2">
                          <button onclick="document.getElementById('sig-upload').click()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-[10px] uppercase font-bold transition-colors flex items-center justify-center gap-2 shadow-lg">
                              <i data-lucide="upload" class="w-3 h-3"></i> Importar Assinatura
@@ -364,7 +335,6 @@
                     </p>
                 </section>
 
-                <!-- Personalização Visual -->
                 <section class="bg-slate-800/20 p-4 rounded-2xl border border-slate-700/30 space-y-5">
                     <div>
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 border-b border-slate-800 pb-1">Acabamentos (Premium)</label>
@@ -376,29 +346,24 @@
                     </div>
                     <div>
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 border-b border-slate-800 pb-1">Cores</label>
-                        <!-- Alterado de grid-cols-5 para flex flex-wrap para acomodar botões menores -->
                         <div id="palette-grid" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1 custom-scroll justify-center"></div>
                     </div>
                 </section>
 
-                <!-- Dados Frente -->
                 <section class="space-y-3">
                     <h2 class="text-[10px] font-black text-slate-500 uppercase border-b border-slate-800 pb-2">Dados da Frente</h2>
                     <div id="inputs-container" class="grid gap-3"></div>
                 </section>
 
-                <!-- Dados Verso -->
                 <section class="space-y-3 bg-indigo-900/10 p-4 rounded-2xl border border-indigo-900/30 shadow-md">
                     <h2 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none mb-1">Dados do Verso</h2>
                     <div id="verso-inputs-container" class="space-y-3"></div>
                 </section>
 
-                <!-- Botões de Ação (Single Mode) -->
                 <button id="btn-save-single" onclick="handlePrintAttempt()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-2xl transition-all uppercase tracking-widest text-xs active:scale-95 group sticky bottom-0 z-50 md:static shadow-emerald-900/50">
                     <i data-lucide="printer" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i> Salvar PDF (A4)
                 </button>
 
-                 <!-- Botões de Ação (Batch Mode - Hidden by default) -->
                  <div id="btn-save-batch-group" class="hidden space-y-2 sticky bottom-0 z-50 md:static">
                     <div class="flex gap-2 items-center bg-slate-900 p-2 rounded-xl border border-slate-700">
                         <button onclick="navigateBatch(-1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-white"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
@@ -432,13 +397,11 @@
             </footer>
         </aside>
 
-        <!-- Preview Area (AGORA VEM DEPOIS) -->
-        <main id="preview-area-wrapper" class="flex-1 flex flex-col items-center bg-[#080c16] custom-scroll relative order-1 lg:order-2 overflow-hidden lg:overflow-auto min-h-[400px] lg:h-full border-b border-slate-800 lg:border-0">
+        <!-- Preview Area (SEGUNDO NO CÓDIGO para ficar abaixo no celular) -->
+        <main id="preview-area-wrapper" class="flex-1 flex flex-col items-center bg-[#080c16] custom-scroll relative order-2 overflow-hidden lg:overflow-auto min-h-[400px] lg:h-full border-b border-slate-800 lg:border-0">
             
-            <!-- Container Interno (Single View) -->
             <div id="preview-inner" class="flex transition-all duration-300 p-8 lg:p-20 layout-side-by-side gap-8 lg:gap-16 origin-top" style="transform: scale(0.35);">
                 
-                <!-- PÁGINA 1: FRENTE -->
                 <div id="cert-front" class="certificate-page relative w-[1122px] h-[793px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] shrink-0 overflow-hidden box-border bg-white text-slate-900 flex flex-col">
                     <div id="front-pattern" class="absolute inset-0 pointer-events-none z-0"></div>
                     <div id="front-ornaments" class="ornate-container-svg z-10"></div>
@@ -447,7 +410,6 @@
                     </div>
 
                     <div class="absolute inset-[70px] flex flex-col items-center justify-between py-6 px-14 text-center box-border z-30 overflow-hidden">
-                        
                         <header class="w-full flex flex-col items-center justify-center gap-3 shrink-0">
                             <div id="display-header-logos" class="flex flex-wrap items-center justify-center gap-8 w-full min-h-[40px] overflow-visible"></div>
                             <div class="w-full max-w-[85%]">
@@ -473,16 +435,13 @@
                         </main>
 
                         <footer class="w-full flex flex-col items-center justify-center shrink-0">
-                            <!-- Aumentado mb-3 para mb-6 para dar mais espaço -->
                             <div id="loc-date-box" class="flex items-center justify-center gap-2 text-sm font-black opacity-80 mb-6 border-y border-black/5 py-1 uppercase tracking-[0.2em] w-full max-w-[500px]">
                                <i data-lucide="map-pin" class="w-4 h-4"></i>
                                <span id="display-location-date">LOCALIDADE, DATA</span>
                             </div>
                             <div class="flex flex-col items-center w-full border-t border-slate-500/10 pt-2 mb-3">
                                 <div class="flex flex-col items-center w-full max-w-[320px]">
-                                    <!-- Aumentado h-12 para h-16 para caber melhor a assinatura -->
                                     <div class="h-16 w-full flex items-end justify-center relative mb-1">
-                                        <!-- Definido max-h-16 e bottom-0.5 para garantir que não suba -->
                                         <img id="display-sig" class="hidden max-h-16 h-auto absolute bottom-0.5 contrast-125 brightness-50 object-contain z-10" src="" alt="Assinatura">
                                         <div id="sig-line" class="w-full h-[1.5px] bg-black/40 transition-colors z-20"></div>
                                     </div>
@@ -495,7 +454,6 @@
                     </div>
                 </div>
 
-                <!-- PÁGINA 2: VERSO -->
                 <div id="cert-back" class="certificate-page relative w-[1122px] h-[793px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] shrink-0 bg-white text-slate-900 overflow-hidden box-border border border-slate-100">
                     <div id="back-pattern" class="absolute inset-0 pointer-events-none opacity-[0.06]"></div>
                     <div id="back-accent-bar" class="absolute left-0 top-0 w-8 h-full shadow-inner"></div>
@@ -560,15 +518,12 @@
                 </div>
             </div>
 
-            <!-- CONTAINER BATCH (Invisível até ativar) -->
-            <div id="batch-container" class="hidden flex-col items-center p-8 lg:p-20 gap-8 lg:gap-16 origin-top" style="transform: scale(0.35);">
-                <!-- Os certificados em lote serão injetados aqui via JS -->
-            </div>
+            <div id="batch-container" class="hidden flex-col items-center p-8 lg:p-20 gap-8 lg:gap-16 origin-top" style="transform: scale(0.35);"></div>
 
         </main>
     </div>
 
-    <!-- Script de Registro do Service Worker (PWA) -->
+    <!-- Script de Registro do Service Worker -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -580,7 +535,8 @@
     </script>
 
     <script>
-        // --- SISTEMA DE LICENCIAMENTO (Mantido) ---
+        // --- CÓDIGO JS PRINCIPAL MANTIDO ---
+        // (Apenas garanta que o código JS completo esteja aqui, idêntico ao da versão anterior)
         const SECRET_SALT = "NEXUS_SEC_2025_KEY_MARIA_JAQUELINE";
         const STORAGE_KEY_ID = "nexus_device_id";
         const STORAGE_KEY_COUNT = "nexus_print_count";
@@ -619,7 +575,6 @@
             } else { showLicenseModal(); }
         }
 
-        // Nova função para Lote (Consome 1 crédito por clique, não por página, para ser justo na versão Free)
         async function handleBatchPrintTrigger() {
             const licensed = await isLicensed();
             let count = parseInt(localStorage.getItem(STORAGE_KEY_COUNT) || "0");
@@ -688,7 +643,6 @@
                 setTimeout(() => input.classList.remove('shake'), 820);
             }
         }
-        // --- FIM SISTEMA LICENCIAMENTO ---
 
         const lawPhrases = [
             { id: 0, text: 'Certificado emitido em conformidade com a Lei nº 9.394/96 (LDB) Art. 42, Decreto nº 5.154/04 e Deliberação CEE 14/97.' },
@@ -701,7 +655,7 @@
             data: {
                 studentName: 'NOME COMPLETO DO ALUNO PARA CERTIFICAÇÃO', studentId: '000.000.000-00', 
                 courseName: 'ENGENHARIA DE SOFTWARE E INTELIGÊNCIA ARTIFICIAL', hours: '360',
-                startDate: '', // Novo campo
+                startDate: '',
                 endDate: '30/06/2025', date: new Date().toLocaleDateString('pt-BR'),
                 company: 'CENTRO NACIONAL DE ENSINO E TECNOLOGIA', cnpj: '12.345.678/0001-90',
                 address: 'Av. Paulista, 2000 - Bela Vista, São Paulo - SP', location: 'São Paulo - SP',
@@ -711,16 +665,14 @@
                 grade: '9.5', frequency: '98%',
                 content: "• Modelagem de Dados Relacionais e NoSQL\n• Machine Learning e Processamento de Linguagem Natural (NLP)\n• Cloud Computing e Arquiteturas Escaláveis\n• Governança de Dados, LGPD e Segurança da Informação\n• Desenvolvimento de Microserviços com Docker e K8s\n• Fundamentos de Inteligência Artificial Generativa",
                 lawReference: lawPhrases[0].text,
-                issuerType: 'PJ', // Default: Pessoa Jurídica
-                courseType: 'curso' // Default: curso
+                issuerType: 'PJ', 
+                courseType: 'curso' 
             },
             activeTrait: 0, activePalette: 0, activeFont: 0, 
             headerLogos: [], footerLogos: [], signature: null, layout: 'side',
             headerLogoSize: 80, footerLogoSize: 45,
-            
-            // Novos estados para Batch
             isBatchMode: false,
-            batchList: [] // [{ name, id }]
+            batchList: [] 
         };
 
         const traits = [
@@ -810,17 +762,14 @@
         function renderSelectorUI() {
             document.getElementById('trait-grid').innerHTML = traits.map(t => `<button onclick="setTrait(${t.id})" class="p-2 text-[9px] font-bold border rounded-lg transition-all uppercase truncate ${state.activeTrait === t.id ? 'bg-blue-600 text-white border-blue-400 shadow-lg' : 'bg-slate-950 text-slate-500 border-slate-800 hover:text-slate-300'}">${t.name}</button>`).join('');
             document.getElementById('font-grid').innerHTML = fonts.map(f => `<button onclick="setFont(${f.id})" class="p-2 text-[9px] font-bold border rounded-lg transition-all uppercase truncate ${state.activeFont === f.id ? 'bg-blue-600 text-white border-blue-400 shadow-lg' : 'bg-slate-950 text-slate-500 border-slate-800 hover:text-slate-300'}" style="font-family: ${f.family.split(',')[0]}">${f.name}</button>`).join('');
-            // Botões de cor reduzidos (w-8 h-8)
             document.getElementById('palette-grid').innerHTML = palettes.map(p => `<button onclick="setPalette(${p.id})" class="w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${state.activePalette === p.id ? 'border-white scale-110 shadow-lg' : 'border-slate-800'}" style="background-color: ${p.primary}">${state.activePalette === p.id ? '<i data-lucide="check" class="text-white w-3 h-3"></i>' : ''}</button>`).join('');
             lucide.createIcons();
         }
 
         function renderInputs() {
-            // Se estiver em modo Batch, desabilita inputs de nome e CPF individuais para evitar confusão
             const isBatch = state.isBatchMode;
             const isPF = state.data.issuerType === 'PF';
             
-            // Selector de Tipo de Emissor
             const issuerToggle = `
                 <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-4">
                     <button onclick="updateData('issuerType', 'PJ'); renderInputs();" class="flex-1 py-2 text-[10px] uppercase font-bold rounded-lg transition-all ${!isPF ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}">
@@ -838,7 +787,6 @@
                 { label: 'Localidade', name: 'location' }, 
                 { label: 'Nome Aluno', name: 'studentName', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
                 { label: 'CPF', name: 'studentId', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
-                // Adicionado Data de Início e renomeados labels de datas
                 { label: 'Data de Início (Opcional)', name: 'startDate' },
                 { label: 'Data de Conclusão', name: 'endDate' }, 
                 { label: 'Horas', name: 'hours' }, 
@@ -847,7 +795,6 @@
                 { label: 'Cargo', name: 'instructorTitle' }
             ];
             
-            // Selector de Tipo de Curso
             const courseTypeOptions = ['curso', 'minicurso', 'treinamento', 'programa', 'workshop', 'palestra'];
             const courseTypeSelect = `
                 <div>
@@ -858,14 +805,12 @@
                 </div>
             `;
 
-            // Constroi o HTML dos inputs
             let inputsHTML = issuerToggle + fields.slice(0, 5).map(f => `
                 <div class="${f.disabled ? 'opacity-50 pointer-events-none' : ''}">
                     <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label} <span class="text-indigo-400">${f.info || ''}</span></label>
                     ${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">`}
                 </div>`).join('');
             
-            // Adiciona o seletor de tipo de curso antes do nome do curso
             inputsHTML += courseTypeSelect;
 
             inputsHTML += `
@@ -883,13 +828,12 @@
 
             document.getElementById('inputs-container').innerHTML = inputsHTML;
             
-            // Lógica para mudar o rótulo do campo de registro com base no modo
             const regLabel = isBatch ? 'Nº Registro do Lote' : 'Nº Registro';
 
             const vFields = [
                 { label: 'Ministrantes e Experiência', name: 'instructorsInfo', area: true },
                 { label: 'Nota', name: 'grade' }, { label: 'Frequência', name: 'frequency' }, 
-                { label: regLabel, name: 'regNum' }, // Alterado aqui
+                { label: regLabel, name: 'regNum' },
                 { label: 'Link Validação', name: 'validationLink' }, { label: 'Grade Curricular', name: 'content', area: true }
             ];
             let html = vFields.map(f => `<div><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label}</label>${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] text-slate-300 outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50">`}</div>`).join('');
@@ -902,8 +846,6 @@
             
             document.getElementById('verso-inputs-container').innerHTML = html;
         }
-
-        // --- LÓGICA DE BATCH (LOTE) ---
 
         function toggleBatchMode(checkbox) {
             state.isBatchMode = checkbox.checked;
@@ -919,34 +861,26 @@
                 controls.classList.remove('hidden');
                 singleBtn.classList.add('hidden');
                 batchBtns.classList.remove('hidden');
-                layoutControls.classList.add('hidden'); // Layout só faz sentido em single por enquanto
-                
+                layoutControls.classList.add('hidden'); 
                 previewInner.classList.add('hidden');
                 batchContainer.classList.remove('hidden');
                 batchContainer.classList.add('flex');
-                
                 body.classList.remove('printing-single');
                 body.classList.add('printing-batch');
-                
-                // Reiniciar inputs para mostrar estado desabilitado de nome/cpf
                 renderInputs();
-                // Se já tiver texto, processa
                 if(document.getElementById('batch-input').value.trim()) processBatch();
             } else {
                 controls.classList.add('hidden');
                 singleBtn.classList.remove('hidden');
                 batchBtns.classList.add('hidden');
                 layoutControls.classList.remove('hidden');
-
                 previewInner.classList.remove('hidden');
                 batchContainer.classList.add('hidden');
                 batchContainer.classList.remove('flex');
-
                 body.classList.add('printing-single');
                 body.classList.remove('printing-batch');
-
                 renderInputs();
-                updateVisuals(); // Restaura visual único
+                updateVisuals(); 
             }
         }
 
@@ -956,13 +890,11 @@
             
             state.batchList = lines.map(line => {
                 const parts = line.split(',');
-                // Default logic
                 let name = parts[0] ? parts[0].trim() : '---';
                 let id = parts[1] ? parts[1].trim() : '---';
                 let grade = parts[2] ? parts[2].trim() : null;
                 let freq = parts[3] ? parts[3].trim() : null;
 
-                // Simple fallback if user just pasted name (legacy supportish)
                 if (parts.length === 1) {
                      name = line.trim();
                      id = '---';
@@ -979,7 +911,6 @@
             renderBatchDOM();
         }
 
-        // Gera HTML String massiva para evitar manipular DOM elemento a elemento repetidamente
         function renderBatchDOM() {
             const container = document.getElementById('batch-container');
             const trait = traits[state.activeTrait];
@@ -988,7 +919,6 @@
             const primaryC = palette.primary;
             const d = state.data;
 
-            // Lógica de Datas Dinâmica (Batch)
             let dateText = '';
             if (d.startDate && d.startDate.trim() !== '') {
                 dateText = `realizado no período de <strong>${d.startDate}</strong> a <strong>${d.endDate}</strong>`;
@@ -996,7 +926,6 @@
                 dateText = `concluído em <strong>${d.endDate}</strong>`;
             }
 
-            // Prepara estilos comuns
             const bgStyle = `background-color: ${palette.bg}; color: ${palette.dark ? '#ffffff' : '#0f172a'}; font-family: ${font.family};`;
             const patternSVG = getTraitSVG(trait.pattern, primaryC);
             const ornateSVG = getOrnateDetails(trait.frame, primaryC);
@@ -1007,7 +936,6 @@
             
             const idLabel = d.issuerType === 'PF' ? 'CPF' : 'CNPJ';
 
-            // Logos
             let hLogosHTML = '';
             if (state.headerLogos.length > 0) {
                 hLogosHTML = state.headerLogos.map(l => `<img src="${l.src}" class="object-contain" style="height: ${state.headerLogoSize}px; opacity: ${l.opacity};">`).join('');
@@ -1028,14 +956,10 @@
             let batchHTML = '';
 
             state.batchList.forEach((student, index) => {
-                // Identificador único para ancoragem se necessário
                 const idSuffix = `_batch_${index}`;
-                
-                // Determine values (Batch override > Global default)
                 const sGrade = student.grade || d.grade;
                 const sFreq = student.freq || d.frequency;
                 
-                // FRONT
                 batchHTML += `
                 <div id="cert-front${idSuffix}" class="certificate-page relative w-[1122px] h-[793px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] shrink-0 overflow-hidden box-border flex flex-col mb-20 break-after-page" style="${bgStyle}">
                     <div class="absolute inset-0 pointer-events-none z-0">${patternSVG}</div>
@@ -1089,7 +1013,6 @@
                     </div>
                 </div>`;
 
-                // BACK
                 batchHTML += `
                 <div id="cert-back${idSuffix}" class="certificate-page relative w-[1122px] h-[793px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] shrink-0 bg-white text-slate-900 overflow-hidden box-border border border-slate-100 mb-20 break-after-page" style="${bgStyle}">
                     <div class="absolute inset-0 pointer-events-none opacity-[0.06]">${patternSVG}</div>
@@ -1158,12 +1081,62 @@
             container.innerHTML = batchHTML;
             lucide.createIcons();
             updateBatchCounter();
-            
-            // Re-aplicar escala se necessário
             window.dispatchEvent(new Event('resize'));
         }
 
-        // --- MANIPULAÇÃO DE DADOS E EVENTOS EXISTENTES ---
+        function handlePrintBatchAll() {
+            const style = document.createElement('style');
+            style.innerHTML = `@media print { .certificate-page { display: block !important; } }`;
+            document.head.appendChild(style);
+            handleBatchPrintTrigger();
+            setTimeout(() => document.head.removeChild(style), 1000);
+        }
+
+        let currentBatchIndex = 0;
+
+        function navigateBatch(dir) {
+            const list = state.batchList;
+            if (list.length === 0) return;
+            
+            const next = currentBatchIndex + dir;
+            if (next >= 0 && next < list.length) {
+                currentBatchIndex = next;
+                
+                const el = document.getElementById(`cert-front_batch_${currentBatchIndex}`);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                updateBatchCounter();
+            }
+        }
+        
+        function updateBatchCounter() {
+            const count = state.batchList.length || 0;
+            const current = count > 0 ? currentBatchIndex + 1 : 0;
+            document.getElementById('batch-counter').innerText = `Visualizando ${current} de ${count}`;
+        }
+
+        function handlePrintCurrentBatch() {
+            if (state.batchList.length === 0) return;
+            
+            const currentIndex = currentBatchIndex;
+            const style = document.createElement('style');
+            style.id = 'temp-print-style';
+            style.innerHTML = `
+                @media print { 
+                    .certificate-page { display: none !important; } 
+                    #cert-front_batch_${currentIndex}, #cert-back_batch_${currentIndex} { display: block !important; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            handleBatchPrintTrigger();
+            
+            setTimeout(() => {
+                const el = document.getElementById('temp-print-style');
+                if(el) el.remove();
+            }, 1000);
+        }
 
         function handleLogoUpload(input, type) {
             const files = Array.from(input.files);
@@ -1232,7 +1205,7 @@
 
         function updateData(k, v) { 
             state.data[k] = v; 
-            if(state.isBatchMode) renderBatchDOM(); // Se estiver em lote, re-renderiza tudo
+            if(state.isBatchMode) renderBatchDOM(); 
             else updateVisuals(); 
         }
         function setTrait(id) { state.activeTrait = id; renderSelectorUI(); state.isBatchMode ? renderBatchDOM() : updateVisuals(); }
@@ -1257,7 +1230,6 @@
         }
 
         function updateVisuals() {
-            // Só atualiza os IDs únicos se NÃO estiver em modo Batch para economizar recursos e evitar erros
             if (state.isBatchMode) return;
 
             const trait = traits[state.activeTrait];
@@ -1304,17 +1276,12 @@
             document.getElementById('display-courseType').innerText = d.courseType || 'curso';
             document.getElementById('display-courseName').innerText = d.courseName;
             
-            // Lógica de Datas Dinâmica (Single)
             const durationText = document.getElementById('cert-duration-text');
             if (d.startDate && d.startDate.trim() !== '') {
                 durationText.innerHTML = `realizado no período de <strong>${d.startDate}</strong> a <strong>${d.endDate}</strong>, <br> totalizando uma carga horária de <strong>${d.hours}</strong> horas.`;
             } else {
                 durationText.innerHTML = `concluído em <strong>${d.endDate}</strong>, <br> totalizando uma carga horária de <strong>${d.hours}</strong> horas.`;
             }
-
-            // CORREÇÃO: Removidas as chamadas para atualizar elementos que foram sobrescritos pelo innerHTML acima
-            // document.getElementById('display-hours').innerText = d.hours; (Removido)
-            // document.getElementById('display-endDate').innerText = d.endDate; (Removido)
 
             document.getElementById('display-instructor').innerText = d.instructor;
             document.getElementById('display-instructorTitle').innerText = d.instructorTitle;
@@ -1371,7 +1338,6 @@
             const width = canvas.offsetWidth;
             const height = canvas.offsetHeight;
 
-            // Se o tamanho não mudou, não faz nada (evita limpar ao rolar no mobile)
             if (width === lastCanvasWidth && height === lastCanvasHeight) return;
 
             lastCanvasWidth = width;
@@ -1384,7 +1350,6 @@
             ctx.lineCap = 'round'; ctx.lineJoin = 'round'; 
             ctx.lineWidth = 2.5; ctx.strokeStyle = '#000000'; 
 
-            // Restaura a assinatura se existir
             if (state.signature) {
                 const img = new Image();
                 img.onload = () => {
@@ -1402,33 +1367,27 @@
         canvas.addEventListener('touchmove', (e) => { if (!drawing) return; e.preventDefault(); const rect = canvas.getBoundingClientRect(); const t = e.touches[0]; ctx.lineTo(t.clientX - rect.left, t.clientY - rect.top); ctx.stroke(); ctx.beginPath(); ctx.moveTo(t.clientX - rect.left, t.clientY - rect.top); });
         canvas.addEventListener('touchend', () => { drawing = false; ctx.beginPath(); state.signature = canvas.toDataURL('image/png', 1.0); if(state.isBatchMode) renderBatchDOM(); else updateVisuals(); });
         
-        // --- MELHORIA DO BOTÃO APAGAR ---
         const clearBtn = document.getElementById('clear-sig');
-        
-        // Impede que o toque no botão seja interpretado como início de desenho no canvas
         const stopProp = (e) => e.stopPropagation();
         clearBtn.addEventListener('mousedown', stopProp);
         clearBtn.addEventListener('touchstart', stopProp);
         
-        // Lógica de limpar
         clearBtn.onclick = (e) => { 
             e.preventDefault();
             e.stopPropagation();
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             state.signature = null; 
             document.getElementById('sig-placeholder').classList.remove('hidden'); 
-            drawing = false; // Reseta estado de desenho
+            drawing = false; 
             if(state.isBatchMode) renderBatchDOM(); else updateVisuals(); 
         };
 
-        // --- Nova Função de Importação de Assinatura ---
         function handleSignatureUpload(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
-                        // Lógica de remoção de fundo branco
                         const tempCanvas = document.createElement('canvas');
                         const tempCtx = tempCanvas.getContext('2d');
                         tempCanvas.width = img.width;
@@ -1437,52 +1396,33 @@
                         
                         const imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
                         const data = imgData.data;
-                        
-                        // Limiar para o "Branco" (0-255)
                         const threshold = 180; 
                         
                         for (let i = 0; i < data.length; i += 4) {
                             const r = data[i];
                             const g = data[i + 1];
                             const b = data[i + 2];
-                            
-                            // Se o pixel for claro o suficiente, torna transparente
                             if (r > threshold && g > threshold && b > threshold) {
                                 data[i + 3] = 0; 
                             }
                         }
                         
                         tempCtx.putImageData(imgData, 0, 0);
-                        
-                        // --- CORREÇÃO DE ESCALA AQUI ---
-                        // 1. Resetar transformação para desenhar em pixels físicos (1:1)
                         ctx.save();
                         ctx.setTransform(1, 0, 0, 1, 0, 0);
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         
-                        // 2. Calcular proporção usando as dimensões físicas do canvas
                         const hRatio = canvas.width / img.width;
                         const vRatio = canvas.height / img.height;
-                        const ratio = Math.min(hRatio, vRatio); // Maximiza a imagem no espaço disponível
-                        
-                        // 3. Centralizar
+                        const ratio = Math.min(hRatio, vRatio); 
                         const centerShift_x = (canvas.width - img.width * ratio) / 2;
                         const centerShift_y = (canvas.height - img.height * ratio) / 2;
                         
-                        // 4. Desenhar imagem processada
                         ctx.drawImage(tempCanvas, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
-                        
-                        // 5. Salvar estado final
                         state.signature = canvas.toDataURL('image/png', 1.0);
-                        
-                        // 6. Restaurar contexto para desenho manual futuro
                         ctx.restore();
-                        
-                        // Forçar reconfiguração do canvas para garantir que o scale volte ao correto para novos traços
                         lastCanvasWidth = 0; 
                         resizeCanvas(); 
-                        
-                        // Atualizar UI
                         document.getElementById('sig-placeholder').classList.add('hidden');
                         if(state.isBatchMode) renderBatchDOM(); else updateVisuals();
                     }
@@ -1493,7 +1433,6 @@
             input.value = ""; 
         }
 
-        // Auto-Resize Inteligente
         function autoResizePreview() {
             const container = document.getElementById('preview-area-wrapper');
             const inner = document.getElementById('preview-inner');
@@ -1501,7 +1440,6 @@
             
             if (!container) return;
             
-            // Escolhe o elemento ativo
             const target = state.isBatchMode ? batchContainer : inner;
             if(!target || target.classList.contains('hidden')) return;
 
@@ -1520,14 +1458,12 @@
                 if (state.layout === 'side' && !state.isBatchMode) {
                     scale = Math.min(availableWidth / (certWidth * 2.1), 0.7);
                 } else {
-                    // Stacked ou Batch
                     scale = Math.min(availableWidth / certWidth, availableHeight / certHeight, 0.7);
                 }
             }
             
             if (scale < 0.15) scale = 0.15;
             target.style.transform = `scale(${scale})`;
-            
             resizeCanvas();
         }
 
