@@ -385,7 +385,7 @@
 
             </div>
 
-            <footer class="mt-8 border-t border-slate-800 pt-6 pb-6 text-[9px] text-slate-500 leading-relaxed no-print shrink-0 block">
+            <footer class="mt-8 border-t border-slate-800 pt-6 pb-2 text-[9px] text-slate-500 leading-relaxed no-print shrink-0 hidden lg:block">
                 <div class="flex items-center gap-2 mb-2 font-black text-slate-400 uppercase tracking-widest italic leading-none">
                     <i data-lucide="scale" class="w-3 h-3 text-red-500"></i> <span class="text-red-500/80">AVISO LEGAL DE DIREITOS AUTORAIS</span>
                 </div>
@@ -476,7 +476,7 @@
                                      <h4 class="text-lg font-black uppercase tracking-tighter">Corpo Docente / Ministrantes</h4>
                                   </div>
                                   <pre id="display-instructorsInfo" class="text-[11px] leading-relaxed whitespace-pre-wrap font-sans opacity-95 italic font-medium break-words text-slate-900 mb-4">Ministrantes...</pre>
-                               </div>
+                                </div>
                                <div id="legal-box" class="p-6 rounded-2xl border-2 border-slate-100 shrink-0 shadow-sm bg-slate-50/50">
                                   <h4 class="text-[10px] font-black uppercase mb-1.5 flex items-center gap-2 text-slate-700">
                                     <i data-lucide="shield-alert" class="w-3 h-3"></i> Amparo Legal Brasileiro
@@ -787,6 +787,7 @@
             const fields = [
                 { label: isPF ? 'Nome Completo' : 'Instituição', name: 'company' }, 
                 { label: isPF ? 'CPF' : 'CNPJ', name: 'cnpj' }, 
+                { label: 'Endereço (Verso)', name: 'address' },
                 { label: 'Localidade', name: 'location' }, 
                 { label: 'Nome Aluno', name: 'studentName', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
                 { label: 'CPF', name: 'studentId', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
@@ -808,7 +809,7 @@
                 </div>
             `;
 
-            let inputsHTML = issuerToggle + fields.slice(0, 5).map(f => `
+            let inputsHTML = issuerToggle + fields.slice(0, 6).map(f => `
                 <div class="${f.disabled ? 'opacity-50 pointer-events-none' : ''}">
                     <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label} <span class="text-indigo-400">${f.info || ''}</span></label>
                     ${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">`}
@@ -823,7 +824,7 @@
                 </div>
             `;
 
-            inputsHTML += fields.slice(6).map(f => `
+            inputsHTML += fields.slice(7).map(f => `
                 <div class="${f.disabled ? 'opacity-50 pointer-events-none' : ''}">
                     <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label} <span class="text-indigo-400">${f.info || ''}</span></label>
                     ${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">`}
@@ -835,11 +836,16 @@
 
             const vFields = [
                 { label: 'Ministrantes e Experiência', name: 'instructorsInfo', area: true },
-                { label: 'Nota', name: 'grade' }, { label: 'Frequência', name: 'frequency' }, 
+                { label: 'Nota', name: 'grade', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
+                { label: 'Frequência', name: 'frequency', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
                 { label: regLabel, name: 'regNum' },
                 { label: 'Link Validação', name: 'validationLink' }, { label: 'Grade Curricular', name: 'content', area: true }
             ];
-            let html = vFields.map(f => `<div><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label}</label>${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] text-slate-300 outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50">`}</div>`).join('');
+            let html = vFields.map(f => `
+                <div class="${f.disabled ? 'opacity-50 pointer-events-none' : ''}">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label} <span class="text-indigo-400">${f.info || ''}</span></label>
+                    ${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] text-slate-300 outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50">`}
+                </div>`).join('');
             
             html += `<div><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">Base Legal (Seleção Rápida)</label>
                      <select onchange="updateData('lawReference', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] text-white outline-none">
