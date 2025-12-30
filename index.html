@@ -3,18 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <!-- Meta tag Viewport (Já existia, mas é crucial para PWA mobile) -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- Configurações PWA -->
-    <meta name="theme-color" content="#020617">
-    <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="icon-192.png">
+    <!-- Configurações PWA e Fullscreen -->
+    <meta name="theme-color" content="#0f172a">
+    
+    <!-- iOS / Safari -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Nexus Certificados">
+    
+    <!-- Android / Chrome -->
+    <meta name="mobile-web-app-capable" content="yes">
     
     <title>NEXUS - GERADOR DE CERTIFICADOS EM LOTE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Fontes Otimizadas -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;700;900&family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;700;900&family=Montserrat:wght@300;400;700;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Libre+Baskerville:wght@400;700&family=Lora:ital,wght@0,400;0,700;1,400&family=Raleway:wght@300;400;700;900&family=Open+Sans:wght@300;400;700&family=Merriweather:wght@300;400;700&family=Arvo:wght@400;700&family=Bebas+Neue&family=Oswald:wght@300;400;700&family=Quicksand:wght@300;400;700&family=Cormorant+Garamond:wght@400;600;700&family=Spectral:wght@400;700&family=Roboto:wght@300;400;700&family=Ubuntu:wght@300;400;700&family=Bitter:wght@400;700&family=Crimson+Text:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Script para Injetar Manifesto PWA Dinamicamente (Garante modo Standalone) -->
+    <script>
+        const manifest = {
+            "name": "Nexus Certificados",
+            "short_name": "Nexus",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#020617",
+            "theme_color": "#020617",
+            "orientation": "any",
+            "icons": [
+                {
+                    "src": "https://cdn-icons-png.flaticon.com/512/2912/2912767.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                },
+                {
+                    "src": "https://cdn-icons-png.flaticon.com/512/2912/2912767.png",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }
+            ]
+        };
+        const stringManifest = JSON.stringify(manifest);
+        const blob = new Blob([stringManifest], {type: 'application/json'});
+        const manifestURL = URL.createObjectURL(blob);
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = manifestURL;
+        document.head.appendChild(link);
+    </script>
+
     <style>
         /* --- ESTILOS DE IMPRESSÃO (PDF) --- */
         @media print {
@@ -193,8 +232,8 @@
 
     <div id="main-container" class="flex flex-col lg:flex-row min-h-screen lg:h-screen w-full">
         
-        <!-- Sidebar: Editor (Scrollável no Mobile, Fixo no Desktop) -->
-        <aside id="sidebar" class="w-full lg:w-[450px] xl:w-[480px] bg-slate-900 shadow-2xl z-30 lg:overflow-y-auto p-4 md:p-6 no-print border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col shrink-0 custom-scroll lg:h-full relative order-2 lg:order-1">
+        <!-- Sidebar: Editor (Agora é o PRIMEIRO no fluxo para ficar em cima no Mobile) -->
+        <aside id="sidebar" class="w-full lg:w-[450px] xl:w-[480px] bg-slate-900 shadow-2xl z-30 lg:overflow-y-auto p-4 md:p-6 no-print border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col shrink-0 custom-scroll lg:h-full relative">
             <div class="flex-1 space-y-6 pb-20 lg:pb-0">
                 <!-- Cabeçalho da App -->
                 <div class="flex items-center gap-3 mb-4 pt-2 lg:pt-0">
@@ -415,7 +454,7 @@
             </footer>
         </aside>
 
-        <!-- Preview Area -->
+        <!-- Preview Area (Agora vem depois do sidebar para ficar embaixo no Mobile) -->
         <main id="preview-area-wrapper" class="flex-1 flex flex-col items-center bg-[#080c16] custom-scroll relative order-1 lg:order-2 overflow-hidden lg:overflow-auto min-h-[400px] lg:h-full border-b border-slate-800 lg:border-0">
             
             <!-- Container Interno (Single View) -->
@@ -555,9 +594,8 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('SW registrado!', reg))
-            .catch(err => console.log('Erro no SW:', err));
+          // Placeholder para registro de SW se necessário
+          console.log('SW pronto para registro (PWA)');
         });
       }
     </script>
