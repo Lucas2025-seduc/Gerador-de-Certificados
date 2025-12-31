@@ -252,9 +252,9 @@
                     </div>
                     <div id="batch-controls" class="hidden space-y-3 transition-all">
                         <div>
-                            <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Lista de Alunos (Nome, CPF, Nota, Frequência)</label>
-                            <textarea id="batch-input" rows="5" class="w-full bg-slate-950 border border-indigo-500/30 rounded-xl p-3 text-[10px] font-mono text-slate-300 outline-none focus:ring-1 focus:ring-indigo-500 resize-y no-scrollbar leading-relaxed" placeholder="João Silva, 123.456.789-00, 9.5, 100%&#10;Maria Santos, 111.222.333-44, 8.0, 95%"></textarea>
-                            <p class="text-[8px] text-slate-500 mt-1 italic">Um aluno por linha. Formato: Nome, CPF, Nota (Opcional), Frequência (Opcional)</p>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Lista (Nome, CPF, Nota, Freq, Email, Tel)</label>
+                            <textarea id="batch-input" rows="5" class="w-full bg-slate-950 border border-indigo-500/30 rounded-xl p-3 text-[10px] font-mono text-slate-300 outline-none focus:ring-1 focus:ring-indigo-500 resize-y no-scrollbar leading-relaxed" placeholder="João Silva, 123.456.789-00, 9.5, 100%, joao@email.com, 5511999999999"></textarea>
+                            <p class="text-[8px] text-slate-500 mt-1 italic">Formato: Nome, CPF, Nota, Freq, Email (opc), WhatsApp (opc - com DDD e código país 55)</p>
                         </div>
                         <button onclick="processBatch()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-lg text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-2">
                             <i data-lucide="play" class="w-3 h-3"></i> Processar Lista
@@ -363,23 +363,45 @@
                     <div id="verso-inputs-container" class="space-y-3"></div>
                 </section>
 
-                <button id="btn-save-single" onclick="handlePrintAttempt()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-2xl transition-all uppercase tracking-widest text-xs active:scale-95 group sticky bottom-0 z-50 md:static shadow-emerald-900/50">
-                    <i data-lucide="printer" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i> Salvar PDF (A4)
-                </button>
+                <!-- SINGLE MODE ACTIONS -->
+                <div id="single-mode-actions" class="sticky bottom-0 z-50 md:static space-y-2">
+                    <button id="btn-save-single" onclick="handlePrintAttempt()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-2xl transition-all uppercase tracking-widest text-xs active:scale-95 group shadow-emerald-900/50">
+                        <i data-lucide="printer" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i> Salvar PDF (A4)
+                    </button>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="sendWhatsappSingle()" class="bg-green-600 hover:bg-green-500 text-white p-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95">
+                             <i data-lucide="message-circle" class="w-4 h-4"></i> <span class="text-[9px] font-bold uppercase">WhatsApp</span>
+                        </button>
+                        <button onclick="sendEmailSingle()" class="bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95">
+                             <i data-lucide="mail" class="w-4 h-4"></i> <span class="text-[9px] font-bold uppercase">Email</span>
+                        </button>
+                    </div>
+                </div>
 
+                 <!-- BATCH MODE ACTIONS -->
                  <div id="btn-save-batch-group" class="hidden space-y-2 sticky bottom-0 z-50 md:static">
                     <div class="flex gap-2 items-center bg-slate-900 p-2 rounded-xl border border-slate-700">
-                        <button onclick="navigateBatch(-1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-white"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                        <span id="batch-counter" class="text-[10px] font-bold text-white flex-1 text-center">Visualizando 1 de 1</span>
-                        <button onclick="navigateBatch(1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-white"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                        <button type="button" onclick="navigateBatch(-1)" class="p-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-white transition-colors touch-manipulation"><i data-lucide="chevron-left" class="w-5 h-5 pointer-events-none"></i></button>
+                        <span id="batch-counter" class="text-[10px] font-bold text-white flex-1 text-center truncate px-2">Visualizando 1 de 1</span>
+                        <button type="button" onclick="navigateBatch(1)" class="p-3 bg-slate-800 hover:bg-slate-700 rounded-lg text-white transition-colors touch-manipulation"><i data-lucide="chevron-right" class="w-5 h-5 pointer-events-none"></i></button>
                     </div>
 
-                    <button onclick="handlePrintCurrentBatch()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all uppercase tracking-widest text-[10px]">
-                        <i data-lucide="file-down" class="w-4 h-4"></i> Salvar Atual (Separado)
+                    <button onclick="handlePrintCurrentBatch()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all uppercase tracking-widest text-[10px] border border-slate-600">
+                        <i data-lucide="file-down" class="w-4 h-4"></i> Salvar Atual (Nomeado)
                     </button>
 
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="sendWhatsappBatch()" class="bg-green-600 hover:bg-green-500 text-white p-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95">
+                             <i data-lucide="message-circle" class="w-4 h-4"></i> <span class="text-[9px] font-bold uppercase">WhatsApp</span>
+                        </button>
+                        <button onclick="sendEmailBatch()" class="bg-slate-700 hover:bg-slate-600 text-white p-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95">
+                             <i data-lucide="mail" class="w-4 h-4"></i> <span class="text-[9px] font-bold uppercase">Email</span>
+                        </button>
+                    </div>
+
                     <button onclick="handlePrintBatchAll()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-500 hover:to-purple-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-2xl transition-all uppercase tracking-widest text-xs active:scale-95 group shadow-indigo-900/50">
-                        <i data-lucide="layers" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i> Salvar Todos (Arquivo Único)
+                        <i data-lucide="layers" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i> Salvar Todos (PDF Único)
                     </button>
                  </div>
 
@@ -400,7 +422,7 @@
             </footer>
         </aside>
 
-        <!-- Preview Area (SEGUNDO NO CÓDIGO para ficar abaixo no celular) -->
+        <!-- Preview Area -->
         <main id="preview-area-wrapper" class="flex-1 flex flex-col items-center bg-[#080c16] custom-scroll relative order-2 overflow-hidden lg:overflow-auto min-h-[400px] lg:h-full border-b border-slate-800 lg:border-0">
             
             <div id="preview-inner" class="flex transition-all duration-300 p-8 lg:p-20 layout-side-by-side gap-8 lg:gap-16 origin-top" style="transform: scale(0.35);">
@@ -528,19 +550,17 @@
 
     <!-- Script de Registro do Service Worker -->
     <script>
-      // Correção do erro do Service Worker: verifica se o protocolo é suportado
+      // Correção do erro do Service Worker
       if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
             .then(reg => console.log('SW registrado!', reg))
-            .catch(err => console.log('Erro no SW (provavelmente ambiente sem suporte):', err));
+            .catch(err => console.log('Erro no SW:', err));
         });
       }
     </script>
 
     <script>
-        // --- CÓDIGO JS PRINCIPAL MANTIDO ---
-        // (Apenas garanta que o código JS completo esteja aqui, idêntico ao da versão anterior)
         const SECRET_SALT = "NEXUS_SEC_2025_KEY_MARIA_JAQUELINE";
         const STORAGE_KEY_ID = "nexus_device_id";
         const STORAGE_KEY_COUNT = "nexus_print_count";
@@ -572,6 +592,12 @@
         async function handlePrintAttempt() {
             const licensed = await isLicensed();
             let count = parseInt(localStorage.getItem(STORAGE_KEY_COUNT) || "0");
+            
+            // Set single file name title
+            const student = state.data.studentName || "Aluno";
+            const reg = state.data.regNum || "Certificado";
+            document.title = `${student} - ${reg}`;
+
             if (licensed) { window.print(); return; }
             if (count < FREE_LIMIT) {
                 count++; localStorage.setItem(STORAGE_KEY_COUNT, count.toString());
@@ -625,12 +651,10 @@
 
         function copyDeviceId() {
             const id = document.getElementById('device-id-display').innerText;
-            // Correção para o erro "NotAllowedError: Failed to execute 'writeText' on 'Clipboard'"
-            // Fallback para execCommand que funciona melhor em iframes/blobs
             try {
                 const textarea = document.createElement("textarea");
                 textarea.value = id;
-                textarea.style.position = "fixed"; // Evita scroll
+                textarea.style.position = "fixed"; 
                 document.body.appendChild(textarea);
                 textarea.focus();
                 textarea.select();
@@ -685,7 +709,8 @@
                 content: "• Modelagem de Dados Relacionais e NoSQL\n• Machine Learning e Processamento de Linguagem Natural (NLP)\n• Cloud Computing e Arquiteturas Escaláveis\n• Governança de Dados, LGPD e Segurança da Informação\n• Desenvolvimento de Microserviços com Docker e K8s\n• Fundamentos de Inteligência Artificial Generativa",
                 lawReference: lawPhrases[0].text,
                 issuerType: 'PJ', 
-                courseType: 'curso' 
+                courseType: 'curso',
+                email: '', phone: '' 
             },
             activeTrait: 0, activePalette: 0, activeFont: 0, 
             headerLogos: [], footerLogos: [], signature: null, layout: 'side',
@@ -693,6 +718,18 @@
             isBatchMode: false,
             batchList: [] 
         };
+
+        // Carregar logo padrão se existir
+        const defaultLogo = new Image();
+        defaultLogo.onload = () => {
+             // Só adiciona se não houver logos
+             if(state.headerLogos.length === 0) {
+                 state.headerLogos.push({ src: 'image_c61754.jpg', opacity: 1 });
+                 if(!state.isBatchMode) renderLogoLists(); updateVisuals();
+             }
+        };
+        defaultLogo.onerror = () => console.log('Logo padrão image_c61754.jpg não encontrada na raiz.');
+        defaultLogo.src = 'image_c61754.jpg';
 
         const traits = [
             { id: 0, name: 'Guilloché Premium', pattern: 'guilloche', frame: 'double' },
@@ -855,7 +892,10 @@
                 { label: 'Nota', name: 'grade', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
                 { label: 'Frequência', name: 'frequency', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
                 { label: regLabel, name: 'regNum' },
-                { label: 'Link Validação', name: 'validationLink' }, { label: 'Grade Curricular', name: 'content', area: true }
+                { label: 'Link Validação', name: 'validationLink' }, { label: 'Grade Curricular', name: 'content', area: true },
+                // Novos campos de contato no verso
+                { label: 'Email do Aluno', name: 'email', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' },
+                { label: 'WhatsApp do Aluno', name: 'phone', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }
             ];
             let html = vFields.map(f => `
                 <div class="${f.disabled ? 'opacity-50 pointer-events-none' : ''}">
@@ -876,6 +916,7 @@
             state.isBatchMode = checkbox.checked;
             const controls = document.getElementById('batch-controls');
             const singleBtn = document.getElementById('btn-save-single');
+            const singleActions = document.getElementById('single-mode-actions');
             const batchBtns = document.getElementById('btn-save-batch-group');
             const previewInner = document.getElementById('preview-inner');
             const batchContainer = document.getElementById('batch-container');
@@ -884,7 +925,7 @@
 
             if (state.isBatchMode) {
                 controls.classList.remove('hidden');
-                singleBtn.classList.add('hidden');
+                singleActions.classList.add('hidden');
                 batchBtns.classList.remove('hidden');
                 layoutControls.classList.add('hidden'); 
                 previewInner.classList.add('hidden');
@@ -896,7 +937,7 @@
                 if(document.getElementById('batch-input').value.trim()) processBatch();
             } else {
                 controls.classList.add('hidden');
-                singleBtn.classList.remove('hidden');
+                singleActions.classList.remove('hidden');
                 batchBtns.classList.add('hidden');
                 layoutControls.classList.remove('hidden');
                 previewInner.classList.remove('hidden');
@@ -919,13 +960,15 @@
                 let id = parts[1] ? parts[1].trim() : '---';
                 let grade = parts[2] ? parts[2].trim() : null;
                 let freq = parts[3] ? parts[3].trim() : null;
+                let email = parts[4] ? parts[4].trim() : '';
+                let phone = parts[5] ? parts[5].trim() : '';
 
                 if (parts.length === 1) {
                      name = line.trim();
                      id = '---';
                 }
 
-                return { name, id, grade, freq };
+                return { name, id, grade, freq, email, phone };
             });
 
             if (state.batchList.length === 0) {
@@ -1047,7 +1090,7 @@
                     <div class="p-16 h-full flex flex-col justify-between box-border text-left z-10 relative">
                         <div class="grid grid-cols-2 gap-16 h-full min-h-0">
                             <div class="flex flex-col h-full overflow-hidden">
-                               <div class="flex-1 overflow-y-auto custom-scroll pr-4 mb-4 min-h-0">
+                                <div class="flex-1 overflow-y-auto custom-scroll pr-4 mb-4 min-h-0">
                                   <div class="flex items-center gap-4 mb-6 border-b-4 pb-4 shrink-0" style="border-color: ${hbColor}">
                                      <i data-lucide="book-open" class="w-6 h-6"></i>
                                      <h4 class="text-lg font-black uppercase tracking-tighter">Grade Curricular</h4>
@@ -1110,6 +1153,19 @@
         }
 
         function handlePrintBatchAll() {
+            // Nome do arquivo de lote consolidado
+            // Logica: Primeiro nome de cada aluno + registro
+            const names = state.batchList.map(s => s.name.split(' ')[0]).join('_');
+            const reg = state.data.regNum || "Certificados";
+            
+            // Limit filename length to avoid OS errors (255 chars is common limit, keeping it safe around 200)
+            let fileName = `${names}_${reg}`;
+            if (fileName.length > 200) {
+                fileName = fileName.substring(0, 200);
+            }
+            
+            document.title = fileName;
+            
             const style = document.createElement('style');
             style.innerHTML = `@media print { .certificate-page { display: block !important; } }`;
             document.head.appendChild(style);
@@ -1129,7 +1185,7 @@
                 
                 const el = document.getElementById(`cert-front_batch_${currentBatchIndex}`);
                 if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    el.scrollIntoView({ behavior: 'auto', block: 'start' });
                 }
                 updateBatchCounter();
             }
@@ -1138,17 +1194,29 @@
         function updateBatchCounter() {
             const count = state.batchList.length || 0;
             const current = count > 0 ? currentBatchIndex + 1 : 0;
-            document.getElementById('batch-counter').innerText = `Visualizando ${current} de ${count}`;
+            
+            if (count > 0 && state.batchList[currentBatchIndex]) {
+                const name = state.batchList[currentBatchIndex].name;
+                // Exibe: 1/10 - NOME DO ALUNO
+                document.getElementById('batch-counter').innerText = `${current}/${count} - ${name}`;
+            } else {
+                document.getElementById('batch-counter').innerText = `Visualizando ${current} de ${count}`;
+            }
         }
 
         function handlePrintCurrentBatch() {
             if (state.batchList.length === 0) return;
             
             const currentIndex = currentBatchIndex;
+            const student = state.batchList[currentIndex];
+            
+            // Define o nome do arquivo para: Nome Aluno - Registro
+            const reg = state.data.regNum || "Certificado";
+            document.title = `${student.name} - ${reg}`;
+
             const style = document.createElement('style');
             style.id = 'temp-print-style';
             
-            // CORREÇÃO: Garante que apenas o certificado atual seja impresso, usando 'display: flex' para manter o layout
             style.innerHTML = `
                 @media print { 
                     .certificate-page { display: none !important; } 
@@ -1160,7 +1228,6 @@
             `;
             document.head.appendChild(style);
             
-            // Pequeno atraso para garantir que o estilo seja aplicado antes da impressão
             setTimeout(() => {
                 handleBatchPrintTrigger();
                 setTimeout(() => {
@@ -1168,6 +1235,58 @@
                     if(el) el.remove();
                 }, 1000);
             }, 100);
+        }
+
+        // --- FUNÇÕES DE ENVIO ---
+
+        function generateMessage(studentName) {
+            return `Olá, ${studentName}, parabéns pela conclusão do curso! Segue em anexo o seu certificado.`;
+        }
+
+        function sendWhatsappSingle() {
+            const phone = state.data.phone ? state.data.phone.replace(/\D/g, '') : '';
+            const name = state.data.studentName;
+            
+            if(!phone) { alert("Por favor, preencha o campo WhatsApp no formulário."); return; }
+            
+            const text = encodeURIComponent(generateMessage(name));
+            window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+        }
+
+        function sendEmailSingle() {
+            const email = state.data.email;
+            const name = state.data.studentName;
+            const course = state.data.courseName;
+
+            if(!email) { alert("Por favor, preencha o campo Email no formulário."); return; }
+
+            const subject = encodeURIComponent(`Certificado de Conclusão - ${course}`);
+            const body = encodeURIComponent(generateMessage(name));
+            window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+        }
+
+        function sendWhatsappBatch() {
+            if (state.batchList.length === 0) return;
+            const student = state.batchList[currentBatchIndex];
+            const phone = student.phone ? student.phone.replace(/\D/g, '') : '';
+            
+            if(!phone) { alert("Este aluno não possui telefone cadastrado na lista."); return; }
+            
+            const text = encodeURIComponent(generateMessage(student.name));
+            window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+        }
+
+        function sendEmailBatch() {
+            if (state.batchList.length === 0) return;
+            const student = state.batchList[currentBatchIndex];
+            const email = student.email;
+            const course = state.data.courseName;
+
+            if(!email) { alert("Este aluno não possui email cadastrado na lista."); return; }
+
+            const subject = encodeURIComponent(`Certificado de Conclusão - ${course}`);
+            const body = encodeURIComponent(generateMessage(student.name));
+            window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
         }
 
         function handleLogoUpload(input, type) {
