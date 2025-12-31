@@ -206,8 +206,9 @@
             <div class="flex-1 space-y-6 pb-20 lg:pb-0">
                 <!-- Cabeçalho da App -->
                 <div class="flex items-center gap-3 mb-4 pt-2 lg:pt-0">
-                    <div class="p-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-500/20">
-                        <i data-lucide="award" class="text-white w-6 h-6"></i>
+                    <div class="w-12 h-12 rounded-xl overflow-hidden shadow-lg shadow-blue-500/20 bg-slate-950 border border-slate-800 shrink-0">
+                        <!-- LOGO DO APP AQUI -->
+                        <img src="image_c61754.jpg" alt="Logo Nexus" class="w-full h-full object-cover" onerror="this.src='icon-192.png'">
                     </div>
                     <div>
                         <h1 class="text-lg font-black text-white italic tracking-tighter uppercase leading-none">
@@ -719,18 +720,6 @@
             batchList: [] 
         };
 
-        // Carregar logo padrão se existir
-        const defaultLogo = new Image();
-        defaultLogo.onload = () => {
-             // Só adiciona se não houver logos
-             if(state.headerLogos.length === 0) {
-                 state.headerLogos.push({ src: 'image_c61754.jpg', opacity: 1 });
-                 if(!state.isBatchMode) renderLogoLists(); updateVisuals();
-             }
-        };
-        defaultLogo.onerror = () => console.log('Logo padrão image_c61754.jpg não encontrada na raiz.');
-        defaultLogo.src = 'image_c61754.jpg';
-
         const traits = [
             { id: 0, name: 'Guilloché Premium', pattern: 'guilloche', frame: 'double' },
             { id: 1, name: 'Rede Tecno', pattern: 'mesh', frame: 'bracket' },
@@ -1090,7 +1079,7 @@
                     <div class="p-16 h-full flex flex-col justify-between box-border text-left z-10 relative">
                         <div class="grid grid-cols-2 gap-16 h-full min-h-0">
                             <div class="flex flex-col h-full overflow-hidden">
-                                <div class="flex-1 overflow-y-auto custom-scroll pr-4 mb-4 min-h-0">
+                               <div class="flex-1 overflow-y-auto custom-scroll pr-4 mb-4 min-h-0">
                                   <div class="flex items-center gap-4 mb-6 border-b-4 pb-4 shrink-0" style="border-color: ${hbColor}">
                                      <i data-lucide="book-open" class="w-6 h-6"></i>
                                      <h4 class="text-lg font-black uppercase tracking-tighter">Grade Curricular</h4>
@@ -1240,7 +1229,7 @@
         // --- FUNÇÕES DE ENVIO ---
 
         function generateMessage(studentName) {
-            return `Olá, ${studentName}, parabéns pela conclusão do curso! Segue em anexo o seu certificado.`;
+            return `Olá, ${studentName}. Parabéns pela conclusão do curso! Segue em anexo o seu certificado.`;
         }
 
         function sendWhatsappSingle() {
