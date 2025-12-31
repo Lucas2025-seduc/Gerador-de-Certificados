@@ -20,19 +20,89 @@
     
     <style>
         .safe-top-padding { padding-top: env(safe-area-inset-top, 20px); }
+        
+        /* --- ESTILOS DE IMPRESSÃO OTIMIZADOS PARA MOBILE --- */
         @media print {
             @page { size: A4 landscape; margin: 0; }
-            html, body { width: 297mm; height: 210mm; margin: 0 !important; padding: 0 !important; background: white !important; overflow: visible !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            .no-print, #sidebar, #main-container > aside, #license-modal, .batch-controls, #dispatch-modal { display: none !important; }
-            #main-container { display: block !important; height: auto !important; width: auto !important; overflow: visible !important; background: white !important; }
-            #preview-area-wrapper { position: static !important; display: block !important; width: 100% !important; height: auto !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; background: white !important; }
-            #preview-inner, #batch-container { transform: none !important; display: block !important; width: 100% !important; height: auto !important; padding: 0 !important; margin: 0 !important; }
-            body.printing-batch #preview-inner { display: none !important; }
-            body.printing-single #batch-container { display: none !important; }
-            .certificate-page { position: relative !important; width: 297mm !important; height: 210mm !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; border: none !important; page-break-after: always !important; break-after: page !important; page-break-inside: avoid !important; float: none !important; background-color: white !important; z-index: auto !important; left: 0 !important; top: 0 !important; }
-            .certificate-page:last-child { page-break-after: auto !important; break-after: auto !important; }
-            .action-bar { display: none !important; }
+            
+            /* Reset geral para garantir que nada interfira no layout de papel */
+            html, body { 
+                width: 100%; 
+                height: 100%; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                background: white !important; 
+                overflow: visible !important; 
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important; 
+            }
+
+            /* Esconde toda a interface do app */
+            .no-print, 
+            #sidebar, 
+            #main-container > aside, 
+            #license-modal, 
+            .batch-controls, 
+            #dispatch-modal, 
+            #layout-controls,
+            .action-bar,
+            #btn-save-single,
+            #btn-save-batch-group { 
+                display: none !important; 
+            }
+
+            /* Garante que os containers principais sejam visíveis e fluídos */
+            #main-container, 
+            #preview-area-wrapper, 
+            #batch-container,
+            #preview-inner { 
+                display: block !important; 
+                position: static !important;
+                width: 100% !important; 
+                height: auto !important; 
+                padding: 0 !important; 
+                margin: 0 !important; 
+                overflow: visible !important; 
+                background: white !important; 
+                transform: none !important; /* Remove o scale do preview */
+            }
+
+            /* Configuração base dos certificados na impressão */
+            .certificate-page {
+                position: relative !important;
+                width: 297mm !important;
+                height: 210mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                display: none !important; /* Esconde todos por padrão */
+                float: none !important;
+                background-color: white !important;
+                left: 0 !important;
+                top: 0 !important;
+            }
+
+            /* Lógica de Visibilidade Baseada em Classes no Body */
+            
+            /* Cenário 1: Imprimir Tudo */
+            body.printing-all .certificate-page {
+                display: block !important;
+            }
+
+            /* Cenário 2: Imprimir Individual */
+            body.printing-single-target .certificate-page.print-visible {
+                display: block !important;
+            }
+
+            .certificate-page:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
         }
+
         .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.3); }
         .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; border: 1px solid #0f172a; }
@@ -817,7 +887,7 @@
                     const s = document.getElementById('temp-single-download');
                     if(s) s.remove();
                     document.title = originalTitle;
-                }, 100); 
+                }, 500); 
             }, 100);
         }
 
