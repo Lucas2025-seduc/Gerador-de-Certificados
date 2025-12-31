@@ -2,72 +2,91 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <!-- Viewport otimizado para PWA: "viewport-fit=cover" permite uso da área do notch -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- Configurações PWA (Android/Chrome) -->
     <meta name="theme-color" content="#020617">
+    
+    <!-- Link para o Manifesto (Sem ./ para evitar conflitos de caminho) -->
     <link rel="manifest" href="manifest.json">
+    
+    <!-- Ícones e Cores -->
     <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- Configurações iOS (Safari) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="NEXUS">
+    
+    <!-- Configurações Legacy Android -->
     <meta name="mobile-web-app-capable" content="yes">
     
     <title>NEXUS - GERADOR DE CERTIFICADOS EM LOTE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Fontes Otimizadas -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;700;900&family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;700;900&family=Montserrat:wght@300;400;700;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Libre+Baskerville:wght@400;700&family=Lora:ital,wght@0,400;0,700;1,400&family=Raleway:wght@300;400;700;900&family=Open+Sans:wght@300;400;700&family=Merriweather:wght@300;400;700&family=Arvo:wght@400;700&family=Bebas+Neue&family=Oswald:wght@300;400;700&family=Quicksand:wght@300;400;700&family=Cormorant+Garamond:wght@400;600;700&family=Spectral:wght@400;700&family=Roboto:wght@300;400;700&family=Ubuntu:wght@300;400;700&family=Bitter:wght@400;700&family=Crimson+Text:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
-        .safe-top-padding { padding-top: env(safe-area-inset-top, 20px); }
-        
-        /* --- ESTILOS DE IMPRESSÃO OTIMIZADOS PARA MOBILE --- */
+        /* --- AJUSTES DE ÁREA SEGURA (NOTCH/ILHA DINÂMICA) --- */
+        .safe-top-padding {
+            padding-top: env(safe-area-inset-top, 20px);
+        }
+
+        /* --- ESTILOS DE IMPRESSÃO (PDF) --- */
         @media print {
-            @page { size: A4 landscape; margin: 0; }
+            @page { 
+                size: A4 landscape; 
+                margin: 0; 
+            }
             
-            /* Reset geral para garantir que nada interfira no layout de papel */
-            html, body { 
-                width: 100%; 
-                height: 100%; 
-                margin: 0 !important; 
-                padding: 0 !important; 
-                background: white !important; 
-                overflow: visible !important; 
-                -webkit-print-color-adjust: exact !important; 
-                print-color-adjust: exact !important; 
+            html, body {
+                width: 297mm;
+                height: 210mm;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                overflow: visible !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
-            /* Esconde toda a interface do app */
-            .no-print, 
-            #sidebar, 
-            #main-container > aside, 
-            #license-modal, 
-            .batch-controls, 
-            #dispatch-modal, 
-            #layout-controls,
-            .action-bar,
-            #btn-save-single,
-            #btn-save-batch-group { 
-                display: none !important; 
-            }
+            .no-print, #sidebar, #main-container > aside, #license-modal, .batch-controls { display: none !important; }
 
-            /* Garante que os containers principais sejam visíveis e fluídos */
-            #main-container, 
-            #preview-area-wrapper, 
-            #batch-container,
-            #preview-inner { 
+            #main-container { 
                 display: block !important; 
-                position: static !important;
-                width: 100% !important; 
                 height: auto !important; 
-                padding: 0 !important; 
-                margin: 0 !important; 
-                overflow: visible !important; 
-                background: white !important; 
-                transform: none !important; /* Remove o scale do preview */
+                width: auto !important;
+                overflow: visible !important;
+                background: white !important;
             }
 
-            /* Configuração base dos certificados na impressão */
+            #preview-area-wrapper {
+                position: static !important;
+                display: block !important;
+                width: 100% !important;
+                height: auto !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+                background: white !important;
+            }
+
+            #preview-inner, #batch-container {
+                transform: none !important;
+                display: block !important;
+                width: 100% !important;
+                height: auto !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            body.printing-batch #preview-inner { display: none !important; }
+            body.printing-single #batch-container { display: none !important; }
+
             .certificate-page {
                 position: relative !important;
                 width: 297mm !important;
@@ -78,23 +97,12 @@
                 border: none !important;
                 page-break-after: always !important;
                 break-after: page !important;
-                display: none !important; /* Esconde todos por padrão */
+                page-break-inside: avoid !important;
                 float: none !important;
                 background-color: white !important;
+                z-index: auto !important;
                 left: 0 !important;
                 top: 0 !important;
-            }
-
-            /* Lógica de Visibilidade Baseada em Classes no Body */
-            
-            /* Cenário 1: Imprimir Tudo */
-            body.printing-all .certificate-page {
-                display: block !important;
-            }
-
-            /* Cenário 2: Imprimir Individual */
-            body.printing-single-target .certificate-page.print-visible {
-                display: block !important;
             }
 
             .certificate-page:last-child {
@@ -103,22 +111,37 @@
             }
         }
 
+        /* --- ESTILOS DE TELA --- */
         .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.3); }
         .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; border: 1px solid #0f172a; }
+        
         canvas { touch-action: none; cursor: crosshair; }
         .certificate-page { transition: background 0.4s ease, color 0.4s ease; flex-shrink: 0; }
+        
         .break-words-custom { word-wrap: break-word; overflow-wrap: break-word; }
         .sig-light-filter { filter: invert(1) brightness(1.8) contrast(1.1) !important; }
+
         .layout-side-by-side { flex-direction: row !important; align-items: flex-start !important; flex-wrap: wrap; justify-content: center; }
         .layout-stacked { flex-direction: column !important; align-items: center !important; }
-        .ornate-container-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+
+        .ornate-container-svg {
+            position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5;
+        }
+
         input[type=range] { -webkit-appearance: none; background: transparent; }
         input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #334155; border-radius: 2px; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #3b82f6; cursor: pointer; margin-top: -6px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.4); }
-        #license-modal, #dispatch-modal { backdrop-filter: blur(8px); }
+
+        #license-modal { backdrop-filter: blur(8px); }
         .shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
-        @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        
         textarea.no-scrollbar::-webkit-scrollbar { display: none; }
         textarea.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -129,56 +152,48 @@
     <div id="license-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 hidden opacity-0 transition-opacity duration-300">
         <div class="bg-slate-900 border border-slate-700 p-8 rounded-2xl shadow-2xl max-w-md w-full mx-4 relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-orange-500 to-red-500"></div>
+            
             <div class="text-center mb-6">
-                <div class="inline-flex p-3 rounded-full bg-red-500/10 mb-4"><i data-lucide="lock" class="w-8 h-8 text-red-500"></i></div>
+                <div class="inline-flex p-3 rounded-full bg-red-500/10 mb-4">
+                    <i data-lucide="lock" class="w-8 h-8 text-red-500"></i>
+                </div>
                 <h2 class="text-2xl font-black text-white uppercase tracking-tight">Versão Gratuita Expirada</h2>
                 <p class="text-sm text-slate-400 mt-2">Você atingiu o limite de 1 certificado gratuito neste dispositivo.</p>
             </div>
+
             <div class="space-y-4">
                 <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
                     <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Seu ID de Dispositivo</label>
                     <div class="flex items-center gap-2">
                         <code id="device-id-display" class="flex-1 font-mono text-blue-400 text-sm bg-slate-900/50 p-2 rounded border border-slate-800 break-all select-all">---</code>
-                        <button onclick="copyDeviceId()" class="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors" title="Copiar ID"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                        <button onclick="copyDeviceId()" class="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors" title="Copiar ID">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
                     </div>
                     <p class="text-[10px] text-slate-600 mt-2 italic mb-3">Envie este ID para o administrador para receber sua chave de desbloqueio.</p>
-                    <a href="https://wa.me/558899361992" target="_blank" class="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-lg shadow-green-900/20 group"><i data-lucide="message-circle" class="w-3.5 h-3.5 group-hover:scale-110 transition-transform"></i> Comprar Licença via WhatsApp</a>
+                    
+                    <a href="https://wa.me/558899361992" target="_blank" class="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2.5 rounded-lg text-xs uppercase tracking-wider transition-colors shadow-lg shadow-green-900/20 group">
+                        <i data-lucide="message-circle" class="w-3.5 h-3.5 group-hover:scale-110 transition-transform"></i> Comprar Licença via WhatsApp
+                    </a>
                 </div>
+
                 <div>
                     <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Chave de Licença</label>
                     <input type="text" id="license-input" placeholder="Cole sua chave aqui..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white text-center font-mono tracking-widest uppercase focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all">
                     <p id="license-error" class="text-red-400 text-xs mt-2 text-center hidden font-bold">Chave inválida para este dispositivo.</p>
                 </div>
-                <button onclick="validateLicense()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-900/20 uppercase tracking-widest text-xs transition-all active:scale-95 mt-2">Desbloquear Aplicativo</button>
-                <button onclick="document.getElementById('license-modal').classList.add('hidden')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl uppercase tracking-widest text-[10px] transition-colors mt-2 border border-slate-700">Voltar à Tela Inicial</button>
-                <p class="text-[10px] text-center text-slate-600 mt-4">Licença vinculada unicamente a este dispositivo.<br>Nexus Security System © 2025</p>
-            </div>
-        </div>
-    </div>
 
-    <!-- Modal de Disparo em Massa -->
-    <div id="dispatch-modal" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-slate-900 border border-slate-700 p-0 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 flex flex-col h-[80vh] overflow-hidden">
-            <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-                <h3 class="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                    <i data-lucide="send" class="text-emerald-500"></i> Central de Envios
-                </h3>
-            </div>
-            <div class="flex-1 overflow-y-auto custom-scroll p-6 space-y-4">
-                <div class="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl text-blue-200 text-xs mb-4 flex gap-3 items-start">
-                    <i data-lucide="info" class="w-5 h-5 shrink-0 mt-0.5"></i>
-                    <p><strong>Instruções:</strong> 
-                        <br>1. Clique em "Baixar PDF" para salvar o certificado do aluno.
-                        <br>2. Clique em WhatsApp/Email para abrir o aplicativo.
-                        <br>3. Anexe o arquivo baixado manualmente.
-                    </p>
-                </div>
-                <div id="dispatch-list" class="space-y-3">
-                    <!-- Lista de alunos será gerada aqui -->
-                </div>
-            </div>
-            <div class="p-4 border-t border-slate-800 bg-slate-950 flex justify-end">
-                <button onclick="closeDispatchModal()" class="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition-colors cursor-pointer">Fechar</button>
+                <button onclick="validateLicense()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black py-4 rounded-xl shadow-lg shadow-blue-900/20 uppercase tracking-widest text-xs transition-all active:scale-95 mt-2">
+                    Desbloquear Aplicativo
+                </button>
+
+                <button onclick="document.getElementById('license-modal').classList.add('hidden')" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl uppercase tracking-widest text-[10px] transition-colors mt-2 border border-slate-700">
+                    Voltar à Tela Inicial
+                </button>
+                
+                <p class="text-[10px] text-center text-slate-600 mt-4">
+                    Licença vinculada unicamente a este dispositivo.<br>Nexus Security System © 2025
+                </p>
             </div>
         </div>
     </div>
@@ -186,19 +201,23 @@
     <!-- MAIN CONTAINER -->
     <div id="main-container" class="flex flex-col lg:flex-row min-h-screen lg:h-screen w-full">
         
-        <!-- Sidebar -->
+        <!-- Sidebar: Editor (PRIMEIRO NO CÓDIGO para ficar no topo no celular) -->
         <aside id="sidebar" class="w-full lg:w-[450px] xl:w-[480px] bg-slate-900 shadow-2xl z-30 lg:overflow-y-auto p-4 md:p-6 safe-top-padding no-print border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col shrink-0 custom-scroll lg:h-full relative order-1">
             <div class="flex-1 space-y-6 pb-20 lg:pb-0">
-                <!-- Cabeçalho -->
+                <!-- Cabeçalho da App -->
                 <div class="flex items-center gap-3 mb-4 pt-2 lg:pt-0">
-                    <div class="p-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-500/20"><i data-lucide="award" class="text-white w-6 h-6"></i></div>
+                    <div class="p-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg shadow-blue-500/20">
+                        <i data-lucide="award" class="text-white w-6 h-6"></i>
+                    </div>
                     <div>
-                        <h1 class="text-lg font-black text-white italic tracking-tighter uppercase leading-none">NEXUS <span class="text-blue-500 underline decoration-2 underline-offset-4">- GERADOR DE CERTIFICADOS</span></h1>
+                        <h1 class="text-lg font-black text-white italic tracking-tighter uppercase leading-none">
+                            NEXUS <span class="text-blue-500 underline decoration-2 underline-offset-4">- GERADOR DE CERTIFICADOS</span>
+                        </h1>
                         <p class="text-[10px] text-slate-500 font-medium mt-1">Aplicativo desenvolvido por Lucas Sebastião Barbosa Silva</p>
                     </div>
                 </div>
 
-                <!-- Licença -->
+                <!-- Painel de Status da Licença -->
                 <div id="license-panel" class="mb-6 p-4 rounded-xl bg-slate-950/50 border border-slate-800 shadow-inner relative overflow-hidden group">
                     <div class="absolute top-0 left-0 w-1 h-full bg-orange-500 transition-colors" id="license-indicator-bar"></div>
                     <div class="flex items-center justify-between mb-2 relative z-10">
@@ -210,17 +229,22 @@
                             <span class="text-3xl font-black text-white leading-none" id="credits-display">1</span>
                             <span class="text-[10px] font-bold text-slate-500 uppercase mb-1">Certificado(s) restante(s)</span>
                         </div>
-                        <button onclick="showLicenseModal()" class="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold py-2.5 rounded-lg text-[10px] uppercase tracking-wider transition-all shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2 group-hover:scale-[1.02]"><i data-lucide="key" class="w-3.5 h-3.5"></i> Obter Licença Permanente</button>
+                        <button onclick="showLicenseModal()" class="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold py-2.5 rounded-lg text-[10px] uppercase tracking-wider transition-all shadow-lg shadow-orange-900/20 flex items-center justify-center gap-2 group-hover:scale-[1.02]">
+                            <i data-lucide="key" class="w-3.5 h-3.5"></i> Obter Licença Permanente
+                        </button>
                     </div>
                     <div id="premium-info" class="hidden relative z-10">
-                        <p class="text-xs text-slate-400 leading-relaxed"><strong class="text-emerald-400">Licença Ativa.</strong> Você tem acesso ilimitado a todos os recursos.</p>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            <strong class="text-emerald-400">Licença Ativa.</strong> Você tem acesso ilimitado a todos os recursos e emissões de certificados.
+                        </p>
                     </div>
                 </div>
 
-                <!-- Lote -->
                 <div class="bg-indigo-900/20 p-4 rounded-2xl border border-indigo-500/30 shadow-lg mb-4">
                     <div class="flex items-center justify-between mb-3">
-                        <h2 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2"><i data-lucide="users" class="w-4 h-4"></i> Geração em Lote</h2>
+                        <h2 class="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                            <i data-lucide="users" class="w-4 h-4"></i> Geração em Lote
+                        </h2>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="batch-toggle" class="sr-only peer" onchange="toggleBatchMode(this)">
                             <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
@@ -228,34 +252,42 @@
                     </div>
                     <div id="batch-controls" class="hidden space-y-3 transition-all">
                         <div>
-                            <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Lista de Alunos</label>
-                            <textarea id="batch-input" rows="5" class="w-full bg-slate-950 border border-indigo-500/30 rounded-xl p-3 text-[10px] font-mono text-slate-300 outline-none focus:ring-1 focus:ring-indigo-500 resize-y no-scrollbar leading-relaxed" placeholder="João Silva, 123.456.789-00, 9.5, 100%, 558899999999, joao@email.com&#10;Maria Santos, 111.222.333-44, 8.0, 95%, 558888888888, maria@email.com"></textarea>
-                            <p class="text-[8px] text-slate-500 mt-1 italic leading-tight">Formato: Nome, CPF, Nota, Frequência, Whatsapp (com DDD e 55), Email</p>
+                            <label class="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Lista de Alunos (Nome, CPF, Nota, Frequência)</label>
+                            <textarea id="batch-input" rows="5" class="w-full bg-slate-950 border border-indigo-500/30 rounded-xl p-3 text-[10px] font-mono text-slate-300 outline-none focus:ring-1 focus:ring-indigo-500 resize-y no-scrollbar leading-relaxed" placeholder="João Silva, 123.456.789-00, 9.5, 100%&#10;Maria Santos, 111.222.333-44, 8.0, 95%"></textarea>
+                            <p class="text-[8px] text-slate-500 mt-1 italic">Um aluno por linha. Formato: Nome, CPF, Nota (Opcional), Frequência (Opcional)</p>
                         </div>
-                        <div class="flex gap-2">
-                             <button onclick="processBatch()" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-lg text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-2"><i data-lucide="play" class="w-3 h-3"></i> Processar Lista</button>
-                             <button onclick="openDispatchModal()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-2"><i data-lucide="send" class="w-3 h-3"></i> Enviar por WhatsApp ou Email</button>
-                        </div>
+                        <button onclick="processBatch()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-lg text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="play" class="w-3 h-3"></i> Processar Lista
+                        </button>
                     </div>
                 </div>
 
                 <section id="layout-controls" class="bg-slate-800/40 p-3 rounded-2xl border border-slate-700/50 hidden lg:block">
                     <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Visualização</label>
                     <div class="flex gap-2">
-                        <button onclick="toggleLayout('side')" id="btn-side" class="flex-1 flex items-center justify-center gap-2 p-2 rounded-xl text-[10px] font-bold uppercase transition-all bg-blue-600 text-white shadow-lg"><i data-lucide="columns" class="w-3.5 h-3.5"></i> Lado a Lado</button>
-                        <button onclick="toggleLayout('stack')" id="btn-stack" class="flex-1 flex items-center justify-center gap-2 p-2 rounded-xl text-[10px] font-bold uppercase transition-all bg-slate-950 text-slate-500 hover:text-slate-300"><i data-lucide="layout-list" class="w-3.5 h-3.5"></i> Vertical</button>
+                        <button onclick="toggleLayout('side')" id="btn-side" class="flex-1 flex items-center justify-center gap-2 p-2 rounded-xl text-[10px] font-bold uppercase transition-all bg-blue-600 text-white shadow-lg">
+                            <i data-lucide="columns" class="w-3.5 h-3.5"></i> Lado a Lado
+                        </button>
+                        <button onclick="toggleLayout('stack')" id="btn-stack" class="flex-1 flex items-center justify-center gap-2 p-2 rounded-xl text-[10px] font-bold uppercase transition-all bg-slate-950 text-slate-500 hover:text-slate-300">
+                            <i data-lucide="layout-list" class="w-3.5 h-3.5"></i> Vertical
+                        </button>
                     </div>
                 </section>
 
                 <section class="space-y-4 bg-slate-800/30 p-4 rounded-2xl border border-slate-700/50 shadow-lg">
-                    <h2 class="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2"><i data-lucide="image" class="w-4 h-4"></i> Logótipos</h2>
+                    <h2 class="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <i data-lucide="image" class="w-4 h-4"></i> Logótipos
+                    </h2>
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
                             <label class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Topo</label>
                             <button onclick="clearLogos('header')" class="text-[8px] text-red-400 hover:text-red-300 uppercase font-bold">Limpar</button>
                         </div>
                         <div id="header-logos-controls" class="space-y-2"></div>
-                        <button onclick="document.getElementById('header-logo-input').click()" class="w-full py-3 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center gap-2 hover:border-blue-500 transition-colors bg-slate-950/30 group touch-manipulation"><i data-lucide="plus" class="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-500"></i><span class="text-[9px] font-bold text-slate-500 uppercase">Adicionar</span></button>
+                        <button onclick="document.getElementById('header-logo-input').click()" class="w-full py-3 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center gap-2 hover:border-blue-500 transition-colors bg-slate-950/30 group touch-manipulation">
+                            <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-500"></i>
+                            <span class="text-[9px] font-bold text-slate-500 uppercase">Adicionar</span>
+                        </button>
                         <input type="file" id="header-logo-input" class="hidden" accept="image/*" multiple onchange="handleLogoUpload(this, 'header')">
                         <div class="bg-slate-950/50 p-2 px-3 rounded-xl border border-slate-800/50 flex items-center gap-3">
                             <label class="text-[8px] font-black text-slate-500 uppercase shrink-0">Tam. <span id="header-logo-size-label" class="text-blue-500 font-mono ml-1">80px</span></label>
@@ -269,7 +301,10 @@
                             <button onclick="clearLogos('footer')" class="text-[8px] text-red-400 hover:text-red-300 uppercase font-bold">Limpar</button>
                         </div>
                         <div id="footer-logos-controls" class="space-y-2"></div>
-                        <button onclick="document.getElementById('footer-logo-input').click()" class="w-full py-3 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center gap-2 hover:border-blue-500 transition-colors bg-slate-950/30 group touch-manipulation"><i data-lucide="plus" class="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-500"></i><span class="text-[9px] font-bold text-slate-500 uppercase">Adicionar</span></button>
+                        <button onclick="document.getElementById('footer-logo-input').click()" class="w-full py-3 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center gap-2 hover:border-blue-500 transition-colors bg-slate-950/30 group touch-manipulation">
+                            <i data-lucide="plus" class="w-3.5 h-3.5 text-slate-500 group-hover:text-blue-500"></i>
+                            <span class="text-[9px] font-bold text-slate-500 uppercase">Adicionar</span>
+                        </button>
                         <input type="file" id="footer-logo-input" class="hidden" accept="image/*" multiple onchange="handleLogoUpload(this, 'footer')">
                         <div class="bg-slate-950/50 p-2 px-3 rounded-xl border border-slate-800/50 flex items-center gap-3">
                             <label class="text-[8px] font-black text-slate-500 uppercase shrink-0">Tam. <span id="footer-logo-size-label" class="text-blue-500 font-mono ml-1">45px</span></label>
@@ -279,17 +314,28 @@
                 </section>
 
                 <section class="space-y-3 bg-slate-800/30 p-4 rounded-2xl border border-slate-700/50 shadow-lg">
-                    <h2 class="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2"><i data-lucide="pen-tool" class="w-4 h-4"></i> Assinatura</h2>
+                    <h2 class="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <i data-lucide="pen-tool" class="w-4 h-4"></i> Assinatura
+                    </h2>
                     <div class="relative w-full h-32 bg-white border-2 border-slate-700 rounded-xl overflow-hidden shadow-inner ring-offset-1 focus-within:ring-2 ring-blue-500 touch-none">
                         <canvas id="sig-canvas" class="w-full h-full touch-none z-10 relative"></canvas>
-                        <div id="sig-placeholder" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30 text-center px-4 z-0"><span class="text-[10px] font-black uppercase text-slate-900 leading-tight">Desenhe Aqui</span></div>
-                        <button id="clear-sig" type="button" class="absolute top-2 right-2 p-3 bg-slate-100 hover:bg-red-100 text-slate-500 rounded-lg shadow-sm touch-manipulation z-50 cursor-pointer transition-colors" title="Limpar Assinatura"><i data-lucide="eraser" class="w-4 h-4"></i></button>
+                        <div id="sig-placeholder" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30 text-center px-4 z-0">
+                            <span class="text-[10px] font-black uppercase text-slate-900 leading-tight">Desenhe Aqui</span>
+                        </div>
+                        <button id="clear-sig" type="button" class="absolute top-2 right-2 p-3 bg-slate-100 hover:bg-red-100 text-slate-500 rounded-lg shadow-sm touch-manipulation z-50 cursor-pointer transition-colors" title="Limpar Assinatura">
+                            <i data-lucide="eraser" class="w-4 h-4"></i>
+                        </button>
                     </div>
                     <div class="flex items-center gap-2 mt-2">
-                         <button onclick="document.getElementById('sig-upload').click()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-[10px] uppercase font-bold transition-colors flex items-center justify-center gap-2 shadow-lg"><i data-lucide="upload" class="w-3 h-3"></i> Importar Assinatura</button>
+                         <button onclick="document.getElementById('sig-upload').click()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg text-[10px] uppercase font-bold transition-colors flex items-center justify-center gap-2 shadow-lg">
+                             <i data-lucide="upload" class="w-3 h-3"></i> Importar Assinatura
+                         </button>
                          <input type="file" id="sig-upload" class="hidden" accept="image/*" onchange="handleSignatureUpload(this)">
                     </div>
-                    <p class="text-[9px] text-slate-500 italic text-center mt-1 leading-tight"><i data-lucide="info" class="w-3 h-3 inline mr-1 text-blue-400"></i> Para melhor resultado, use uma imagem com <strong>fundo branco</strong> e <strong>tinta preta</strong>. O sistema removerá o fundo automaticamente.</p>
+                    <p class="text-[9px] text-slate-500 italic text-center mt-1 leading-tight">
+                        <i data-lucide="info" class="w-3 h-3 inline mr-1 text-blue-400"></i>
+                        Para melhor resultado, use uma imagem com <strong>fundo branco</strong> e <strong>tinta preta</strong>. O sistema removerá o fundo automaticamente.
+                    </p>
                 </section>
 
                 <section class="bg-slate-800/20 p-4 rounded-2xl border border-slate-700/30 space-y-5">
@@ -317,7 +363,9 @@
                     <div id="verso-inputs-container" class="space-y-3"></div>
                 </section>
 
-                <button id="btn-save-single" onclick="handlePrintAttempt()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-2xl transition-all uppercase tracking-widest text-xs active:scale-95 group sticky bottom-0 z-50 md:static shadow-emerald-900/50"><i data-lucide="printer" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i> Salvar PDF (A4)</button>
+                <button id="btn-save-single" onclick="handlePrintAttempt()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-2xl transition-all uppercase tracking-widest text-xs active:scale-95 group sticky bottom-0 z-50 md:static shadow-emerald-900/50">
+                    <i data-lucide="printer" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i> Salvar PDF (A4)
+                </button>
 
                  <div id="btn-save-batch-group" class="hidden space-y-2 sticky bottom-0 z-50 md:static">
                     <div class="flex gap-2 items-center bg-slate-900 p-2 rounded-xl border border-slate-700">
@@ -325,25 +373,45 @@
                         <span id="batch-counter" class="text-[10px] font-bold text-white flex-1 text-center">Visualizando 1 de 1</span>
                         <button onclick="navigateBatch(1)" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-white"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
                     </div>
-                    <button onclick="handlePrintCurrentBatch()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all uppercase tracking-widest text-[10px]"><i data-lucide="file-down" class="w-4 h-4"></i> Salvar Atual (Separado)</button>
-                    <button onclick="handlePrintBatchAll()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-500 hover:to-purple-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-2xl transition-all uppercase tracking-widest text-xs active:scale-95 group shadow-indigo-900/50"><i data-lucide="layers" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i> Salvar Todos (Arquivo Único)</button>
+
+                    <button onclick="handlePrintCurrentBatch()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all uppercase tracking-widest text-[10px]">
+                        <i data-lucide="file-down" class="w-4 h-4"></i> Salvar Atual (Separado)
+                    </button>
+
+                    <button onclick="handlePrintBatchAll()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-500 hover:to-purple-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-2xl transition-all uppercase tracking-widest text-xs active:scale-95 group shadow-indigo-900/50">
+                        <i data-lucide="layers" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i> Salvar Todos (Arquivo Único)
+                    </button>
                  </div>
+
             </div>
+
             <footer class="mt-8 border-t border-slate-800 pt-6 pb-2 text-[9px] text-slate-500 leading-relaxed no-print shrink-0 hidden lg:block">
-                <div class="flex items-center gap-2 mb-2 font-black text-slate-400 uppercase tracking-widest italic leading-none"><i data-lucide="scale" class="w-3 h-3 text-red-500"></i> <span class="text-red-500/80">AVISO LEGAL DE DIREITOS AUTORAIS</span></div>
+                <div class="flex items-center gap-2 mb-2 font-black text-slate-400 uppercase tracking-widest italic leading-none">
+                    <i data-lucide="scale" class="w-3 h-3 text-red-500"></i> <span class="text-red-500/80">AVISO LEGAL DE DIREITOS AUTORAIS</span>
+                </div>
                 <div class="space-y-2 text-justify opacity-70 font-medium">
-                    <p>© 2025 Maria Jaqueline da Silva Pereira - CNPJ: 62.323.279/0001-00. Todos os direitos reservados. Este software é protegido pelas leis de propriedade intelectual e direitos autorais internacionais.</p>
+                    <p>
+                        © 2025 Maria Jaqueline da Silva Pereira - CNPJ: 62.323.279/0001-00. Todos os direitos reservados. Este software é protegido pelas leis de propriedade intelectual e direitos autorais internacionais.
+                    </p>
+                    <p class="opacity-80 text-[8px] leading-normal">
+                        É estritamente proibida a cópia, reprodução, redistribuição, engenharia reversa, descompilação ou modificação do código-fonte deste aplicativo, total ou parcialmente, sem autorização prévia e expressa do detentor dos direitos. A violação destes termos sujeitará o infrator às sanções civis e criminais previstas na Lei nº 9.610/98 (Lei de Direitos Autorais) e Lei nº 9.609/98 (Lei de Software).
+                    </p>
                 </div>
             </footer>
         </aside>
 
-        <!-- Preview Area -->
+        <!-- Preview Area (SEGUNDO NO CÓDIGO para ficar abaixo no celular) -->
         <main id="preview-area-wrapper" class="flex-1 flex flex-col items-center bg-[#080c16] custom-scroll relative order-2 overflow-hidden lg:overflow-auto min-h-[400px] lg:h-full border-b border-slate-800 lg:border-0">
+            
             <div id="preview-inner" class="flex transition-all duration-300 p-8 lg:p-20 layout-side-by-side gap-8 lg:gap-16 origin-top" style="transform: scale(0.35);">
+                
                 <div id="cert-front" class="certificate-page relative w-[1122px] h-[793px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] shrink-0 overflow-hidden box-border bg-white text-slate-900 flex flex-col">
                     <div id="front-pattern" class="absolute inset-0 pointer-events-none z-0"></div>
                     <div id="front-ornaments" class="ornate-container-svg z-10"></div>
-                    <div id="front-border" class="absolute inset-0 border-[40px] pointer-events-none z-20"><div id="front-inner-line" class="absolute inset-4 border-[2.5px]"></div></div>
+                    <div id="front-border" class="absolute inset-0 border-[40px] pointer-events-none z-20">
+                        <div id="front-inner-line" class="absolute inset-4 border-[2.5px]"></div>
+                    </div>
+
                     <div class="absolute inset-[70px] flex flex-col items-center justify-between py-6 px-14 text-center box-border z-30 overflow-hidden">
                         <header class="w-full flex flex-col items-center justify-center gap-3 shrink-0">
                             <div id="display-header-logos" class="flex flex-wrap items-center justify-center gap-8 w-full min-h-[40px] overflow-visible"></div>
@@ -352,6 +420,7 @@
                                 <p id="display-cnpj" class="text-[8px] font-black opacity-60 tracking-[0.2em] uppercase mt-1">CNPJ: ---</p>
                             </div>
                         </header>
+
                         <main class="w-full flex flex-col items-center justify-center flex-1 py-2 gap-2 overflow-hidden">
                             <div class="shrink-0">
                                 <h1 id="cert-title" class="text-[32px] font-black tracking-[0.3em] uppercase m-0 leading-none">CERTIFICADO</h1>
@@ -367,8 +436,12 @@
                                 </div>
                             </div>
                         </main>
+
                         <footer class="w-full flex flex-col items-center justify-center shrink-0">
-                            <div id="loc-date-box" class="flex items-center justify-center gap-2 text-sm font-black opacity-80 mb-6 border-y border-black/5 py-1 uppercase tracking-[0.2em] w-full max-w-[500px]"><i data-lucide="map-pin" class="w-4 h-4"></i><span id="display-location-date">LOCALIDADE, DATA</span></div>
+                            <div id="loc-date-box" class="flex items-center justify-center gap-2 text-sm font-black opacity-80 mb-6 border-y border-black/5 py-1 uppercase tracking-[0.2em] w-full max-w-[500px]">
+                               <i data-lucide="map-pin" class="w-4 h-4"></i>
+                               <span id="display-location-date">LOCALIDADE, DATA</span>
+                            </div>
                             <div class="flex flex-col items-center w-full border-t border-slate-500/10 pt-2 mb-3">
                                 <div class="flex flex-col items-center w-full max-w-[320px]">
                                     <div class="h-16 w-full flex items-end justify-center relative mb-1">
@@ -388,17 +461,26 @@
                     <div id="back-pattern" class="absolute inset-0 pointer-events-none opacity-[0.06]"></div>
                     <div id="back-accent-bar" class="absolute left-0 top-0 w-8 h-full shadow-inner"></div>
                     <div id="back-accent-bar-right" class="absolute right-0 top-0 w-8 h-full opacity-10"></div>
+                    
                     <div class="p-16 h-full flex flex-col justify-between box-border text-left z-10 relative">
                         <div class="grid grid-cols-2 gap-16 h-full min-h-0">
                             <div class="flex flex-col h-full overflow-hidden">
-                                <div class="flex-1 overflow-y-auto custom-scroll pr-4 mb-4 min-h-0">
-                                  <div id="back-content-header" class="flex items-center gap-4 mb-6 border-b-4 border-slate-900 pb-4 shrink-0"><i data-lucide="book-open" class="w-6 h-6"></i><h4 class="text-lg font-black uppercase tracking-tighter">Grade Curricular</h4></div>
+                               <div class="flex-1 overflow-y-auto custom-scroll pr-4 mb-4 min-h-0">
+                                  <div id="back-content-header" class="flex items-center gap-4 mb-6 border-b-4 border-slate-900 pb-4 shrink-0">
+                                     <i data-lucide="book-open" class="w-6 h-6"></i>
+                                     <h4 class="text-lg font-black uppercase tracking-tighter">Grade Curricular</h4>
+                                  </div>
                                   <pre id="display-content" class="text-[11px] leading-relaxed whitespace-pre-wrap font-sans opacity-95 italic font-medium break-words mb-10">Conteúdo...</pre>
-                                  <div id="back-instructors-header" class="flex items-center gap-4 mb-6 border-b-4 border-slate-900 pb-4 shrink-0"><i data-lucide="users" class="w-6 h-6"></i><h4 class="text-lg font-black uppercase tracking-tighter">Corpo Docente / Ministrantes</h4></div>
+                                  <div id="back-instructors-header" class="flex items-center gap-4 mb-6 border-b-4 border-slate-900 pb-4 shrink-0">
+                                     <i data-lucide="users" class="w-6 h-6"></i>
+                                     <h4 class="text-lg font-black uppercase tracking-tighter">Corpo Docente / Ministrantes</h4>
+                                  </div>
                                   <pre id="display-instructorsInfo" class="text-[11px] leading-relaxed whitespace-pre-wrap font-sans opacity-95 italic font-medium break-words text-slate-900 mb-4">Ministrantes...</pre>
-                               </div>
+                                </div>
                                <div id="legal-box" class="p-6 rounded-2xl border-2 border-slate-100 shrink-0 shadow-sm bg-slate-50/50">
-                                  <h4 class="text-[10px] font-black uppercase mb-1.5 flex items-center gap-2 text-slate-700"><i data-lucide="shield-alert" class="w-3 h-3"></i> Amparo Legal Brasileiro</h4>
+                                  <h4 class="text-[10px] font-black uppercase mb-1.5 flex items-center gap-2 text-slate-700">
+                                    <i data-lucide="shield-alert" class="w-3 h-3"></i> Amparo Legal Brasileiro
+                                  </h4>
                                   <p id="display-law" class="text-[9px] leading-tight opacity-80 m-0 font-bold italic">Este certificado é emitido conforme lei...</p>
                                </div>
                             </div>
@@ -416,14 +498,20 @@
                                        <h4 class="text-[9px] font-black uppercase tracking-widest mb-4 opacity-70 border-b border-white/20 pb-2 text-center">Desempenho Académico</h4>
                                        <div class="grid grid-cols-2 gap-4 text-center">
                                           <div><span class="text-[8px] uppercase font-bold opacity-60 block">Média</span><span id="display-grade" class="text-2xl font-black">---</span></div>
-                                          <div><span class="text-[8px] uppercase font-bold opacity-60 block">Frequência</span><span class="text-2xl font-black">---</span></div>
+                                          <div><span class="text-[8px] uppercase font-bold opacity-60 block">Frequência</span><span id="display-frequency" class="text-2xl font-black">---</span></div>
                                        </div>
                                     </div>
                                     <div class="space-y-4">
-                                      <h4 id="audit-header" class="text-xs font-black uppercase border-b border-slate-200 pb-2 m-0 tracking-widest text-center">Registro e Validação do Certificado</h4>
+                                      <h4 id="audit-header" class="text-xs font-black uppercase border-b border-slate-200 pb-2 m-0 tracking-widest text-center">Registro e validação do certificado</h4>
                                       <div class="grid grid-cols-1 gap-2 text-center text-slate-800">
-                                        <div class="bg-slate-50 p-4 rounded-xl border-b-2 border-slate-300"><span class="text-[8px] font-black block opacity-40 uppercase mb-1">Nº de Registro do Lote</span><span class="text-sm font-black uppercase tracking-widest">${d.regNum || '---'}</span></div>
-                                        <div class="bg-slate-50 p-3 rounded-xl border-b-2 border-slate-300 flex flex-col items-center"><span class="text-[8px] font-black block opacity-40 uppercase mb-1">Link para Validação</span><a id="display-validationLink" href="#" target="_blank" class="text-[10px] font-bold text-blue-600 underline break-all max-w-full px-4 italic">---</a></div>
+                                        <div class="bg-slate-50 p-4 rounded-xl border-b-2 border-slate-300">
+                                          <span class="text-[8px] font-black block opacity-40 uppercase mb-1">Nº de Registro de Certificado</span>
+                                          <span id="display-regNum" class="text-sm font-black uppercase tracking-widest">---</span>
+                                        </div>
+                                        <div class="bg-slate-50 p-3 rounded-xl border-b-2 border-slate-300 flex flex-col items-center">
+                                          <span class="text-[8px] font-black block opacity-40 uppercase mb-1">Link para Validação</span>
+                                          <a id="display-validationLink" href="#" target="_blank" class="text-[10px] font-bold text-blue-600 underline break-all max-w-full px-4 italic">---</a>
+                                        </div>
                                       </div>
                                     </div>
                                 </div>
@@ -432,16 +520,27 @@
                     </div>
                 </div>
             </div>
+
             <div id="batch-container" class="hidden flex-col items-center p-8 lg:p-20 gap-8 lg:gap-16 origin-top" style="transform: scale(0.35);"></div>
+
         </main>
     </div>
 
     <!-- Script de Registro do Service Worker -->
     <script>
-      if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.log('Erro no SW:', err)); }); }
+      // Correção do erro do Service Worker: verifica se o protocolo é suportado
+      if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW registrado!', reg))
+            .catch(err => console.log('Erro no SW (provavelmente ambiente sem suporte):', err));
+        });
+      }
     </script>
 
     <script>
+        // --- CÓDIGO JS PRINCIPAL MANTIDO ---
+        // (Apenas garanta que o código JS completo esteja aqui, idêntico ao da versão anterior)
         const SECRET_SALT = "NEXUS_SEC_2025_KEY_MARIA_JAQUELINE";
         const STORAGE_KEY_ID = "nexus_device_id";
         const STORAGE_KEY_COUNT = "nexus_print_count";
@@ -494,6 +593,7 @@
             const licensed = await isLicensed();
             const count = parseInt(localStorage.getItem(STORAGE_KEY_COUNT) || "0");
             const remaining = Math.max(0, FREE_LIMIT - count);
+            const panel = document.getElementById('license-panel');
             const indicator = document.getElementById('license-indicator-bar');
             const badge = document.getElementById('status-badge');
             const freeInfo = document.getElementById('free-credits-info');
@@ -525,22 +625,22 @@
 
         function copyDeviceId() {
             const id = document.getElementById('device-id-display').innerText;
-            const textarea = document.createElement('textarea');
-            textarea.value = id;
-            textarea.style.position = 'fixed';
-            textarea.style.left = '-9999px';
-            textarea.style.top = '0';
-            document.body.appendChild(textarea);
-            textarea.focus();
-            textarea.select();
+            // Correção para o erro "NotAllowedError: Failed to execute 'writeText' on 'Clipboard'"
+            // Fallback para execCommand que funciona melhor em iframes/blobs
             try {
-                const successful = document.execCommand('copy');
-                if(successful) alert("ID copiado para a área de transferência!");
-                else alert("Não foi possível copiar o ID automaticamente.");
+                const textarea = document.createElement("textarea");
+                textarea.value = id;
+                textarea.style.position = "fixed"; // Evita scroll
+                document.body.appendChild(textarea);
+                textarea.focus();
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert("ID copiado para a área de transferência!");
             } catch (err) {
-                alert("Erro ao copiar ID. Por favor, selecione e copie manualmente.");
+                console.error("Erro ao copiar: ", err);
+                alert("Não foi possível copiar automaticamente. Por favor, selecione e copie manualmente.");
             }
-            document.body.removeChild(textarea);
         }
 
         async function validateLicense() {
@@ -689,15 +789,24 @@
             const isBatch = state.isBatchMode;
             const isPF = state.data.issuerType === 'PF';
             
-            const issuerToggle = `<div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-4"><button onclick="updateData('issuerType', 'PJ'); renderInputs();" class="flex-1 py-2 text-[10px] uppercase font-bold rounded-lg transition-all ${!isPF ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}">Instituição (PJ)</button><button onclick="updateData('issuerType', 'PF'); renderInputs();" class="flex-1 py-2 text-[10px] uppercase font-bold rounded-lg transition-all ${isPF ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}">Pessoa Física (PF)</button></div>`;
+            const issuerToggle = `
+                <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-4">
+                    <button onclick="updateData('issuerType', 'PJ'); renderInputs();" class="flex-1 py-2 text-[10px] uppercase font-bold rounded-lg transition-all ${!isPF ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}">
+                        Instituição (PJ)
+                    </button>
+                    <button onclick="updateData('issuerType', 'PF'); renderInputs();" class="flex-1 py-2 text-[10px] uppercase font-bold rounded-lg transition-all ${isPF ? 'bg-blue-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}">
+                        Pessoa Física (PF)
+                    </button>
+                </div>
+            `;
 
             const fields = [
                 { label: isPF ? 'Nome Completo' : 'Instituição', name: 'company' }, 
                 { label: isPF ? 'CPF' : 'CNPJ', name: 'cnpj' }, 
                 { label: 'Endereço (Verso)', name: 'address' },
                 { label: 'Localidade', name: 'location' }, 
-                { label: 'Nome Aluno', name: 'studentName', disabled: isBatch, info: isBatch ? '(Gerido pelo Lote)' : '' }, 
-                { label: 'CPF', name: 'studentId', disabled: isBatch, info: isBatch ? '(Gerido pelo Lote)' : '' }, 
+                { label: 'Nome Aluno', name: 'studentName', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
+                { label: 'CPF', name: 'studentId', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
                 { label: 'Data de Início (Opcional)', name: 'startDate' },
                 { label: 'Data de Conclusão', name: 'endDate' }, 
                 { label: 'Horas', name: 'hours' }, 
@@ -707,12 +816,35 @@
             ];
             
             const courseTypeOptions = ['curso', 'minicurso', 'treinamento', 'programa', 'workshop', 'palestra'];
-            const courseTypeSelect = `<div><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">Tipo de Evento</label><select onchange="updateData('courseType', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 uppercase">${courseTypeOptions.map(opt => `<option value="${opt}" ${state.data.courseType === opt ? 'selected' : ''}>${opt.toUpperCase()}</option>`).join('')}</select></div>`;
+            const courseTypeSelect = `
+                <div>
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">Tipo de Evento</label>
+                    <select onchange="updateData('courseType', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 uppercase">
+                        ${courseTypeOptions.map(opt => `<option value="${opt}" ${state.data.courseType === opt ? 'selected' : ''}>${opt.toUpperCase()}</option>`).join('')}
+                    </select>
+                </div>
+            `;
 
-            let inputsHTML = issuerToggle + fields.slice(0, 6).map(f => `<div class="${f.disabled ? 'opacity-40 pointer-events-none' : ''}"><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label} <span class="text-indigo-400">${f.info || ''}</span></label>${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">`}</div>`).join('');
+            let inputsHTML = issuerToggle + fields.slice(0, 6).map(f => `
+                <div class="${f.disabled ? 'opacity-50 pointer-events-none' : ''}">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label} <span class="text-indigo-400">${f.info || ''}</span></label>
+                    ${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">`}
+                </div>`).join('');
+            
             inputsHTML += courseTypeSelect;
-            inputsHTML += `<div><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">Nome do Curso</label><textarea oninput="updateData('courseName', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data.courseName || ''}</textarea></div>`;
-            inputsHTML += fields.slice(7).map(f => `<div class="${f.disabled ? 'opacity-40 pointer-events-none' : ''}"><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label} <span class="text-indigo-400">${f.info || ''}</span></label>${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">`}</div>`).join('');
+
+            inputsHTML += `
+                <div>
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">Nome do Curso</label>
+                    <textarea oninput="updateData('courseName', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data.courseName || ''}</textarea>
+                </div>
+            `;
+
+            inputsHTML += fields.slice(7).map(f => `
+                <div class="${f.disabled ? 'opacity-50 pointer-events-none' : ''}">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label} <span class="text-indigo-400">${f.info || ''}</span></label>
+                    ${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 resize-none shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">`}
+                </div>`).join('');
 
             document.getElementById('inputs-container').innerHTML = inputsHTML;
             
@@ -720,14 +852,23 @@
 
             const vFields = [
                 { label: 'Ministrantes e Experiência', name: 'instructorsInfo', area: true },
-                { label: 'Nota', name: 'grade', disabled: isBatch, info: isBatch ? '(Gerido pelo Lote)' : '' }, 
-                { label: 'Frequência', name: 'frequency', disabled: isBatch, info: isBatch ? '(Gerido pelo Lote)' : '' }, 
+                { label: 'Nota', name: 'grade', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
+                { label: 'Frequência', name: 'frequency', disabled: isBatch, info: isBatch ? '(Gerido pelo modo Lote)' : '' }, 
                 { label: regLabel, name: 'regNum' },
                 { label: 'Link Validação', name: 'validationLink' }, { label: 'Grade Curricular', name: 'content', area: true }
             ];
-            let html = vFields.map(f => `<div class="${f.disabled ? 'opacity-40 pointer-events-none' : ''}"><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label} <span class="text-indigo-400">${f.info || ''}</span></label>${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] text-slate-300 outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50">`}</div>`).join('');
+            let html = vFields.map(f => `
+                <div class="${f.disabled ? 'opacity-50 pointer-events-none' : ''}">
+                    <label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">${f.label} <span class="text-indigo-400">${f.info || ''}</span></label>
+                    ${f.area ? `<textarea oninput="updateData('${f.name}', this.value)" rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] text-slate-300 outline-none focus:ring-1 focus:ring-blue-600/50 shadow-inner">${state.data[f.name] || ''}</textarea>` : `<input type="text" value="${state.data[f.name] || ''}" oninput="updateData('${f.name}', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-white outline-none focus:ring-1 focus:ring-blue-600/50">`}
+                </div>`).join('');
             
-            html += `<div><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">Base Legal (Seleção Rápida)</label><select onchange="updateData('lawReference', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] text-white outline-none"><option value="none">-- Ocultar Amparo Legal --</option>${lawPhrases.map(l => `<option value="${l.text}" ${state.data.lawReference === l.text ? 'selected' : ''}>${l.text.substring(0, 40)}...</option>`).join('')}</select></div>`;
+            html += `<div><label class="block text-[9px] font-bold text-slate-500 uppercase mb-1 leading-none ml-1">Base Legal (Seleção Rápida)</label>
+                     <select onchange="updateData('lawReference', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-[10px] text-white outline-none">
+                        <option value="none">-- Ocultar Amparo Legal --</option>
+                        ${lawPhrases.map(l => `<option value="${l.text}" ${state.data.lawReference === l.text ? 'selected' : ''}>${l.text.substring(0, 40)}...</option>`).join('')}
+                     </select></div>`;
+            
             document.getElementById('verso-inputs-container').innerHTML = html;
         }
 
@@ -778,117 +919,21 @@
                 let id = parts[1] ? parts[1].trim() : '---';
                 let grade = parts[2] ? parts[2].trim() : null;
                 let freq = parts[3] ? parts[3].trim() : null;
-                let phone = parts[4] ? parts[4].trim().replace(/\D/g,'') : null;
-                let email = parts[5] ? parts[5].trim() : null;
 
-                if (parts.length === 1) { name = line.trim(); id = '---'; }
-                return { name, id, grade, freq, phone, email };
+                if (parts.length === 1) {
+                     name = line.trim();
+                     id = '---';
+                }
+
+                return { name, id, grade, freq };
             });
 
-            if (state.batchList.length === 0) { alert("Por favor, insira pelo menos um aluno na lista."); return; }
+            if (state.batchList.length === 0) {
+                alert("Por favor, insira pelo menos um aluno na lista.");
+                return;
+            }
+
             renderBatchDOM();
-        }
-
-        function generateMessage(student) {
-            return `Olá, ${student.name}! \n\nParabéns pela conclusão do ${state.data.courseName}! \n\nÉ com grande alegria que a ${state.data.company} lhe entrega este certificado.\n\nDesejamos muito sucesso em sua jornada! \n\n(Anexo: Certificado)`;
-        }
-
-        function sendWhatsapp(index) {
-            const student = state.batchList[index];
-            if(!student || !student.phone) { alert('Número de WhatsApp não cadastrado para este aluno.'); return; }
-            const msg = generateMessage(student);
-            window.open(`https://wa.me/${student.phone}?text=${encodeURIComponent(msg)}`, '_blank');
-        }
-
-        function sendEmail(index) {
-            const student = state.batchList[index];
-            if(!student || !student.email) { alert('E-mail não cadastrado para este aluno.'); return; }
-            const subject = `Seu Certificado - ${state.data.courseName}`;
-            const body = generateMessage(student);
-            window.open(`mailto:${student.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
-        }
-
-        function openDispatchModal() {
-            if (state.batchList.length === 0) { alert("Processe a lista de alunos primeiro."); return; }
-            const list = document.getElementById('dispatch-list');
-            list.innerHTML = state.batchList.map((s, i) => `
-                <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-lg border border-slate-800">
-                    <div>
-                        <p class="text-sm font-bold text-white">${s.name}</p>
-                        <p class="text-[10px] text-slate-500">${s.phone ? 'Whatsapp: ' + s.phone : 'Sem Whatsapp'} | ${s.email ? s.email : 'Sem Email'}</p>
-                    </div>
-                    <div class="flex gap-2">
-                         <button onclick="downloadCertificate(${i})" class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-colors" title="Baixar PDF"><i data-lucide="download" class="w-3 h-3"></i> Baixar PDF</button>
-                         <button onclick="sendWhatsapp(${i})" class="p-2 ${s.phone ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-slate-800 text-slate-600 cursor-not-allowed'} rounded-lg transition-colors" title="WhatsApp"><i data-lucide="message-circle" class="w-4 h-4"></i></button>
-                         <button onclick="sendEmail(${i})" class="p-2 ${s.email ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-800 text-slate-600 cursor-not-allowed'} rounded-lg transition-colors" title="E-mail"><i data-lucide="mail" class="w-4 h-4"></i></button>
-                    </div>
-                </div>
-            `).join('');
-            document.getElementById('dispatch-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('dispatch-modal').classList.remove('opacity-0'), 10);
-            lucide.createIcons();
-        }
-
-        function closeDispatchModal() {
-            document.getElementById('dispatch-modal').classList.add('opacity-0');
-            setTimeout(() => document.getElementById('dispatch-modal').classList.add('hidden'), 300);
-        }
-
-        function downloadCertificate(index) {
-            const student = state.batchList[index];
-            if (!student) return;
-
-            const originalTitle = document.title;
-            const safeName = student.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9 ]/g, " ").trim();
-            document.title = `Certificado ${safeName}`;
-
-            const style = document.createElement('style');
-            style.id = 'temp-single-download';
-            style.innerHTML = `
-                @media print {
-                    @page { margin: 0; size: landscape; }
-                    
-                    /* Force hiding everything else */
-                    body > * { display: none !important; }
-                    
-                    /* Except the specific batch item */
-                    #batch-container, #batch-container * { display: block !important; visibility: visible !important; }
-                    
-                    /* Hide other certificates */
-                    .certificate-page { display: none !important; }
-                    
-                    /* Show ONLY the chosen certificate */
-                    #cert-front_batch_${index}, #cert-back_batch_${index} { 
-                        display: block !important; 
-                        visibility: visible !important;
-                        position: absolute;
-                        left: 0;
-                        top: 0;
-                        width: 297mm;
-                        height: 210mm;
-                        page-break-after: always;
-                    }
-
-                    #cert-back_batch_${index} { 
-                        top: 210mm; /* Force second page position if needed, though page-break handles it */
-                        page-break-after: auto;
-                    }
-                    
-                    /* Ensure modal and UI are gone */
-                    #dispatch-modal, .action-bar, #sidebar, .batch-controls, .no-print { display: none !important; }
-                }
-            `;
-            document.head.appendChild(style);
-
-            setTimeout(() => {
-                window.print();
-                
-                setTimeout(() => {
-                    const s = document.getElementById('temp-single-download');
-                    if(s) s.remove();
-                    document.title = originalTitle;
-                }, 500); 
-            }, 100);
         }
 
         function renderBatchDOM() {
@@ -900,8 +945,11 @@
             const d = state.data;
 
             let dateText = '';
-            if (d.startDate && d.startDate.trim() !== '') { dateText = `realizado no período de <strong>${d.startDate}</strong> a <strong>${d.endDate}</strong>`; } 
-            else { dateText = `concluído em <strong>${d.endDate}</strong>`; }
+            if (d.startDate && d.startDate.trim() !== '') {
+                dateText = `realizado no período de <strong>${d.startDate}</strong> a <strong>${d.endDate}</strong>`;
+            } else {
+                dateText = `concluído em <strong>${d.endDate}</strong>`;
+            }
 
             const bgStyle = `background-color: ${palette.bg}; color: ${palette.dark ? '#ffffff' : '#0f172a'}; font-family: ${font.family};`;
             const patternSVG = getTraitSVG(trait.pattern, primaryC);
@@ -910,23 +958,25 @@
             const sigFilter = palette.dark ? 'filter: invert(1) brightness(1.8) contrast(1.1);' : '';
             const hbColor = palette.dark ? primaryC : '#0f172a';
             const sigLineColor = palette.dark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)';
+            
             const idLabel = d.issuerType === 'PF' ? 'CPF' : 'CNPJ';
 
             let hLogosHTML = '';
-            if (state.headerLogos.length > 0) { hLogosHTML = state.headerLogos.map(l => `<img src="${l.src}" class="object-contain" style="height: ${state.headerLogoSize}px; opacity: ${l.opacity};">`).join(''); } 
-            else { hLogosHTML = `<div class="w-12 h-12 rounded-full border-2 flex items-center justify-center" style="color: ${primaryC}"><i data-lucide="award" class="w-6 h-6"></i></div>`; }
+            if (state.headerLogos.length > 0) {
+                hLogosHTML = state.headerLogos.map(l => `<img src="${l.src}" class="object-contain" style="height: ${state.headerLogoSize}px; opacity: ${l.opacity};">`).join('');
+            } else {
+                hLogosHTML = `<div class="w-12 h-12 rounded-full border-2 flex items-center justify-center" style="color: ${primaryC}"><i data-lucide="award" class="w-6 h-6"></i></div>`;
+            }
 
             let fLogosHTML = '';
-            if (state.footerLogos.length > 0) { fLogosHTML = state.footerLogos.map(l => `<img src="${l.src}" class="object-contain" style="height: ${state.footerLogoSize}px; opacity: ${l.opacity};">`).join(''); }
+            if (state.footerLogos.length > 0) {
+                fLogosHTML = state.footerLogos.map(l => `<img src="${l.src}" class="object-contain" style="height: ${state.footerLogoSize}px; opacity: ${l.opacity};">`).join('');
+            }
             
             let bLogoHTML = '';
             if (state.headerLogos.length > 0) bLogoHTML = `<img src="${state.headerLogos[0].src}" class="h-14 grayscale opacity-60 object-contain">`;
 
             const legalDisplay = (d.lawReference && d.lawReference !== 'none') ? 'block' : 'none';
-            let backAddress = d.address || '';
-            if (d.location && !backAddress.toLowerCase().includes(d.location.toLowerCase())) {
-                backAddress += ` - ${d.location}`;
-            }
 
             let batchHTML = '';
 
@@ -935,12 +985,14 @@
                 const sGrade = student.grade || d.grade;
                 const sFreq = student.freq || d.frequency;
                 
-                // Removed action bar as requested
                 batchHTML += `
                 <div id="cert-front${idSuffix}" class="certificate-page relative w-[1122px] h-[793px] shadow-[0_20px_60px_rgba(0,0,0,0.6)] shrink-0 overflow-hidden box-border flex flex-col mb-20 break-after-page" style="${bgStyle}">
                     <div class="absolute inset-0 pointer-events-none z-0">${patternSVG}</div>
                     <div class="ornate-container-svg z-10">${ornateSVG}</div>
-                    <div class="absolute inset-0 border-[40px] pointer-events-none z-20" style="border-color: ${borderColor}"><div class="absolute inset-4 border-[2.5px]" style="border-color: ${primaryC}"></div></div>
+                    <div class="absolute inset-0 border-[40px] pointer-events-none z-20" style="border-color: ${borderColor}">
+                        <div class="absolute inset-4 border-[2.5px]" style="border-color: ${primaryC}"></div>
+                    </div>
+
                     <div class="absolute inset-[70px] flex flex-col items-center justify-between py-6 px-14 text-center box-border z-30 overflow-hidden">
                         <header class="w-full flex flex-col items-center justify-center gap-3 shrink-0">
                             <div class="flex flex-wrap items-center justify-center gap-8 w-full min-h-[40px] overflow-visible">${hLogosHTML}</div>
@@ -949,6 +1001,7 @@
                                 <p class="text-[8px] font-black opacity-60 tracking-[0.2em] uppercase mt-1">${idLabel}: ${d.cnpj}</p>
                             </div>
                         </header>
+
                         <main class="w-full flex flex-col items-center justify-center flex-1 py-2 gap-2 overflow-hidden">
                             <div class="shrink-0">
                                 <h1 class="text-[32px] font-black tracking-[0.3em] uppercase m-0 leading-none" style="color: ${primaryC}">CERTIFICADO</h1>
@@ -964,8 +1017,12 @@
                                 </div>
                             </div>
                         </main>
+
                         <footer class="w-full flex flex-col items-center justify-center shrink-0">
-                            <div class="flex items-center justify-center gap-2 text-sm font-black opacity-80 mb-6 border-y border-black/5 py-1 uppercase tracking-[0.2em] w-full max-w-[500px]"><i data-lucide="map-pin" class="w-4 h-4"></i><span>${d.location}, EM ${d.date}</span></div>
+                            <div class="flex items-center justify-center gap-2 text-sm font-black opacity-80 mb-6 border-y border-black/5 py-1 uppercase tracking-[0.2em] w-full max-w-[500px]">
+                               <i data-lucide="map-pin" class="w-4 h-4"></i>
+                               <span>${d.location}, EM ${d.date}</span>
+                            </div>
                             <div class="flex flex-col items-center w-full border-t border-slate-500/10 pt-2 mb-3">
                                 <div class="flex flex-col items-center w-full max-w-[320px]">
                                     <div class="h-16 w-full flex items-end justify-center relative mb-1">
@@ -986,42 +1043,57 @@
                     <div class="absolute inset-0 pointer-events-none opacity-[0.06]">${patternSVG}</div>
                     <div class="absolute left-0 top-0 w-8 h-full shadow-inner" style="background-color: ${primaryC}"></div>
                     <div class="absolute right-0 top-0 w-8 h-full opacity-10" style="background-color: ${primaryC}"></div>
+                    
                     <div class="p-16 h-full flex flex-col justify-between box-border text-left z-10 relative">
                         <div class="grid grid-cols-2 gap-16 h-full min-h-0">
                             <div class="flex flex-col h-full overflow-hidden">
-                                <div class="flex-1 overflow-y-auto custom-scroll pr-4 mb-4 min-h-0">
-                                  <div id="back-content-header" class="flex items-center gap-4 mb-6 border-b-4 border-slate-900 pb-4 shrink-0"><i data-lucide="book-open" class="w-6 h-6"></i><h4 class="text-lg font-black uppercase tracking-tighter">Grade Curricular</h4></div>
-                                  <pre id="display-content" class="text-[11px] leading-relaxed whitespace-pre-wrap font-sans opacity-95 italic font-medium break-words mb-10">${d.content}</pre>
-                                  <div class="flex items-center gap-4 mb-6 border-b-4 pb-4 shrink-0" style="border-color: ${hbColor}"><i data-lucide="users" class="w-6 h-6"></i><h4 class="text-lg font-black uppercase tracking-tighter">Corpo Docente / Ministrantes</h4></div>
-                                  <pre id="display-instructorsInfo" class="text-[11px] leading-relaxed whitespace-pre-wrap font-sans opacity-95 italic font-medium break-words text-slate-900 mb-4">${d.instructorsInfo}</pre>
+                               <div class="flex-1 overflow-y-auto custom-scroll pr-4 mb-4 min-h-0">
+                                  <div class="flex items-center gap-4 mb-6 border-b-4 pb-4 shrink-0" style="border-color: ${hbColor}">
+                                     <i data-lucide="book-open" class="w-6 h-6"></i>
+                                     <h4 class="text-lg font-black uppercase tracking-tighter">Grade Curricular</h4>
+                                  </div>
+                                  <pre class="text-[11px] leading-relaxed whitespace-pre-wrap font-sans opacity-95 italic font-medium break-words mb-10">${d.content}</pre>
+                                  <div class="flex items-center gap-4 mb-6 border-b-4 pb-4 shrink-0" style="border-color: ${hbColor}">
+                                     <i data-lucide="users" class="w-6 h-6"></i>
+                                     <h4 class="text-lg font-black uppercase tracking-tighter">Corpo Docente / Ministrantes</h4>
+                                  </div>
+                                  <pre class="text-[11px] leading-relaxed whitespace-pre-wrap font-sans opacity-95 italic font-medium break-words text-slate-900 mb-4">${d.instructorsInfo}</pre>
                                </div>
                                <div class="p-6 rounded-2xl border-2 border-slate-100 shrink-0 shadow-sm bg-slate-50/50" style="display: ${legalDisplay}">
-                                  <h4 class="text-[10px] font-black uppercase mb-1.5 flex items-center gap-2 text-slate-700"><i data-lucide="shield-alert" class="w-3 h-3"></i> Amparo Legal Brasileiro</h4>
+                                  <h4 class="text-[10px] font-black uppercase mb-1.5 flex items-center gap-2 text-slate-700">
+                                    <i data-lucide="shield-alert" class="w-3 h-3"></i> Amparo Legal Brasileiro
+                                  </h4>
                                   <p class="text-[9px] leading-tight opacity-80 m-0 font-bold italic">${d.lawReference}</p>
                                </div>
                             </div>
                             <div class="flex flex-col justify-between border-l-2 border-slate-100 pl-16 py-2">
                                 <div class="space-y-6 flex-1 overflow-hidden">
                                     <div class="flex items-start gap-6 shrink-0 max-w-full overflow-hidden">
-                                       <div id="display-back-logos" class="flex flex-col gap-4 shrink-0"></div>
+                                       <div class="flex flex-col gap-4 shrink-0">${bLogoHTML}</div>
                                        <div class="text-left flex-1 min-w-0 max-w-full">
-                                         <h4 id="display-company-back" class="text-lg font-black uppercase m-0 leading-tight break-words-custom">${d.company}</h4>
+                                         <h4 class="text-lg font-black uppercase m-0 leading-tight break-words-custom">${d.company}</h4>
                                          <p class="text-[10px] opacity-60 font-bold mt-1 uppercase">${idLabel}: ${d.cnpj}</p>
-                                         <p class="text-[10px] opacity-50 max-w-full leading-snug mt-2 italic break-words-custom">${backAddress}</p>
+                                         <p class="text-[10px] opacity-50 max-w-full leading-snug mt-2 italic break-words-custom">${d.address}</p>
                                        </div>
                                     </div>
                                     <div class="bg-slate-900 text-white p-6 rounded-3xl shadow-xl">
                                        <h4 class="text-[9px] font-black uppercase tracking-widest mb-4 opacity-70 border-b border-white/20 pb-2 text-center">Desempenho Académico</h4>
                                        <div class="grid grid-cols-2 gap-4 text-center">
-                                          <div><span class="text-[8px] uppercase font-bold opacity-60 block">Média</span><span id="display-grade" class="text-2xl font-black">---</span></div>
-                                          <div><span class="text-[8px] uppercase font-bold opacity-60 block">Frequência</span><span class="text-2xl font-black">---</span></div>
+                                          <div><span class="text-[8px] uppercase font-bold opacity-60 block">Média</span><span class="text-2xl font-black">${sGrade}</span></div>
+                                          <div><span class="text-[8px] uppercase font-bold opacity-60 block">Frequência</span><span class="text-2xl font-black">${sFreq}</span></div>
                                        </div>
                                     </div>
                                     <div class="space-y-4">
-                                      <h4 id="audit-header" class="text-xs font-black uppercase border-b border-slate-200 pb-2 m-0 tracking-widest text-center">Registro e Validação do Certificado</h4>
+                                      <h4 class="text-xs font-black uppercase border-b border-slate-200 pb-2 m-0 tracking-widest text-center">Registro e validação do certificado</h4>
                                       <div class="grid grid-cols-1 gap-2 text-center text-slate-800">
-                                        <div class="bg-slate-50 p-4 rounded-xl border-b-2 border-slate-300"><span class="text-[8px] font-black block opacity-40 uppercase mb-1">Nº de Registro do Lote</span><span class="text-sm font-black uppercase tracking-widest">${d.regNum || '---'}</span></div>
-                                        <div class="bg-slate-50 p-3 rounded-xl border-b-2 border-slate-300 flex flex-col items-center"><span class="text-[8px] font-black block opacity-40 uppercase mb-1">Link para Validação</span><a id="display-validationLink" href="#" target="_blank" class="text-[10px] font-bold text-blue-600 underline break-all max-w-full px-4 italic">---</a></div>
+                                        <div class="bg-slate-50 p-4 rounded-xl border-b-2 border-slate-300">
+                                          <span class="text-[8px] font-black block opacity-40 uppercase mb-1">Nº de Registro de Certificado</span>
+                                          <span class="text-sm font-black uppercase tracking-widest">${d.regNum || '---'}</span>
+                                        </div>
+                                        <div class="bg-slate-50 p-3 rounded-xl border-b-2 border-slate-300 flex flex-col items-center">
+                                          <span class="text-[8px] font-black block opacity-40 uppercase mb-1">Link para Validação</span>
+                                          <a href="${d.validationLink.startsWith('http') ? d.validationLink : `https://${d.validationLink}`}" target="_blank" class="text-[10px] font-bold text-blue-600 underline break-all max-w-full px-4 italic">${d.validationLink || '---'}</a>
+                                        </div>
                                       </div>
                                     </div>
                                 </div>
@@ -1071,7 +1143,31 @@
 
         function handlePrintCurrentBatch() {
             if (state.batchList.length === 0) return;
-            downloadCertificate(currentBatchIndex);
+            
+            const currentIndex = currentBatchIndex;
+            const style = document.createElement('style');
+            style.id = 'temp-print-style';
+            
+            // CORREÇÃO: Garante que apenas o certificado atual seja impresso, usando 'display: flex' para manter o layout
+            style.innerHTML = `
+                @media print { 
+                    .certificate-page { display: none !important; } 
+                    #cert-front_batch_${currentIndex}, #cert-back_batch_${currentIndex} { 
+                        display: flex !important; 
+                        page-break-after: auto !important;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // Pequeno atraso para garantir que o estilo seja aplicado antes da impressão
+            setTimeout(() => {
+                handleBatchPrintTrigger();
+                setTimeout(() => {
+                    const el = document.getElementById('temp-print-style');
+                    if(el) el.remove();
+                }, 1000);
+            }, 100);
         }
 
         function handleLogoUpload(input, type) {
@@ -1165,26 +1261,6 @@
             window.dispatchEvent(new Event('resize'));
         }
 
-        function copyDeviceId() {
-            const id = document.getElementById('device-id-display').innerText;
-            const textarea = document.createElement('textarea');
-            textarea.value = id;
-            textarea.style.position = 'fixed';
-            textarea.style.left = '-9999px';
-            textarea.style.top = '0';
-            document.body.appendChild(textarea);
-            textarea.focus();
-            textarea.select();
-            try {
-                const successful = document.execCommand('copy');
-                if(successful) alert("ID copiado para a área de transferência!");
-                else alert("Não foi possível copiar o ID automaticamente.");
-            } catch (err) {
-                alert("Erro ao copiar ID. Por favor, selecione e copie manualmente.");
-            }
-            document.body.removeChild(textarea);
-        }
-
         function updateVisuals() {
             if (state.isBatchMode) return;
 
@@ -1225,86 +1301,63 @@
 
             const idLabel = d.issuerType === 'PF' ? 'CPF' : 'CNPJ';
 
-            // Safe update helper
-            const setText = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
-
-            setText('display-company', d.company);
-            setText('display-cnpj', idLabel + ': ' + d.cnpj);
-            setText('display-studentName', d.studentName);
-            setText('display-studentId', d.studentId);
-            setText('display-courseType', d.courseType || 'curso');
-            setText('display-courseName', d.courseName);
+            document.getElementById('display-company').innerText = d.company;
+            document.getElementById('display-cnpj').innerText = idLabel + ': ' + d.cnpj;
+            document.getElementById('display-studentName').innerText = d.studentName;
+            document.getElementById('display-studentId').innerText = d.studentId;
+            document.getElementById('display-courseType').innerText = d.courseType || 'curso';
+            document.getElementById('display-courseName').innerText = d.courseName;
             
             const durationText = document.getElementById('cert-duration-text');
-            if (durationText) {
-                if (d.startDate && d.startDate.trim() !== '') {
-                    durationText.innerHTML = `realizado no período de <strong>${d.startDate}</strong> a <strong>${d.endDate}</strong>, <br> totalizando uma carga horária de <strong>${d.hours}</strong> horas.`;
-                } else {
-                    durationText.innerHTML = `concluído em <strong>${d.endDate}</strong>, <br> totalizando uma carga horária de <strong>${d.hours}</strong> horas.`;
-                }
+            if (d.startDate && d.startDate.trim() !== '') {
+                durationText.innerHTML = `realizado no período de <strong>${d.startDate}</strong> a <strong>${d.endDate}</strong>, <br> totalizando uma carga horária de <strong>${d.hours}</strong> horas.`;
+            } else {
+                durationText.innerHTML = `concluído em <strong>${d.endDate}</strong>, <br> totalizando uma carga horária de <strong>${d.hours}</strong> horas.`;
             }
 
-            setText('display-instructor', d.instructor);
-            setText('display-instructorTitle', d.instructorTitle);
-            setText('display-location-date', `${d.location}, EM ${d.date}`.toUpperCase());
-            setText('display-content', d.content);
-            setText('display-grade', d.grade);
-            setText('display-frequency', d.frequency);
-            setText('display-regNum', d.regNum || '---');
-            setText('display-instructorsInfo', d.instructorsInfo);
+            document.getElementById('display-instructor').innerText = d.instructor;
+            document.getElementById('display-instructorTitle').innerText = d.instructorTitle;
+            document.getElementById('display-location-date').innerText = `${d.location}, EM ${d.date}`.toUpperCase();
+            document.getElementById('display-content').innerText = d.content;
+            document.getElementById('display-grade').innerText = d.grade;
+            document.getElementById('display-frequency').innerText = d.frequency;
+            document.getElementById('display-regNum').innerText = d.regNum || '---';
+            document.getElementById('display-instructorsInfo').innerText = d.instructorsInfo;
             
             const linkEl = document.getElementById('display-validationLink');
-            if (linkEl) {
-                linkEl.innerText = d.validationLink || '---';
-                linkEl.href = d.validationLink.startsWith('http') ? d.validationLink : `https://${d.validationLink}`;
-            }
+            linkEl.innerText = d.validationLink || '---';
+            linkEl.href = d.validationLink.startsWith('http') ? d.validationLink : `https://${d.validationLink}`;
 
             const legalBox = document.getElementById('legal-box');
-            if (legalBox) {
-                if (d.lawReference && d.lawReference !== 'none') { legalBox.classList.remove('hidden'); setText('display-law', d.lawReference); } 
-                else { legalBox.classList.add('hidden'); }
+            if (d.lawReference && d.lawReference !== 'none') {
+                legalBox.classList.remove('hidden');
+                document.getElementById('display-law').innerText = d.lawReference;
+            } else {
+                legalBox.classList.add('hidden');
             }
 
-            setText('display-company-back', d.company);
-            setText('display-cnpj-back', idLabel + ': ' + d.cnpj);
-            
-            let backAddress = d.address || '';
-            if (d.location && !backAddress.toLowerCase().includes(d.location.toLowerCase())) {
-                backAddress += ` - ${d.location}`;
-            }
-            setText('display-address-back', backAddress);
-
-            // Update Single View Static Text for Audit
-            const auditHeader = document.getElementById('audit-header');
-            if (auditHeader) {
-                auditHeader.innerText = "Registro e Validação do Certificado";
-                auditHeader.className = "text-xs font-black uppercase border-b border-slate-200 pb-2 m-0 tracking-widest text-center";
-            }
+            document.getElementById('display-company-back').innerText = d.company;
+            document.getElementById('display-cnpj-back').innerText = idLabel + ': ' + d.cnpj;
+            document.getElementById('display-address-back').innerText = d.address;
 
             const sigImg = document.getElementById('display-sig');
-            if (sigImg) {
-                if (state.signature) { sigImg.src = state.signature; sigImg.classList.remove('hidden'); sigImg.classList.toggle('sig-light-filter', palette.dark); } 
-                else { sigImg.classList.add('hidden'); }
-            }
+            if (state.signature) { sigImg.src = state.signature; sigImg.classList.remove('hidden'); sigImg.classList.toggle('sig-light-filter', palette.dark); } 
+            else { sigImg.classList.add('hidden'); }
 
             const hDisplay = document.getElementById('display-header-logos');
             const bDisplay = document.getElementById('display-back-logos');
-            if (hDisplay && bDisplay) {
-                if (state.headerLogos.length > 0) {
-                    hDisplay.innerHTML = state.headerLogos.map(l => `<img src="${l.src}" class="object-contain" style="height: ${state.headerLogoSize}px; opacity: ${l.opacity}; transition: opacity 0.2s;">`).join('');
-                    bDisplay.innerHTML = `<img src="${state.headerLogos[0].src}" class="h-14 grayscale opacity-60 object-contain">`;
-                } else {
-                    hDisplay.innerHTML = `<div class="w-12 h-12 rounded-full border-2 flex items-center justify-center" style="color: ${primaryC}"><i data-lucide="award" class="w-6 h-6"></i></div>`;
-                    bDisplay.innerHTML = ''; lucide.createIcons();
-                }
+            if (state.headerLogos.length > 0) {
+                hDisplay.innerHTML = state.headerLogos.map(l => `<img src="${l.src}" class="object-contain" style="height: ${state.headerLogoSize}px; opacity: ${l.opacity}; transition: opacity 0.2s;">`).join('');
+                bDisplay.innerHTML = `<img src="${state.headerLogos[0].src}" class="h-14 grayscale opacity-60 object-contain">`;
+            } else {
+                hDisplay.innerHTML = `<div class="w-12 h-12 rounded-full border-2 flex items-center justify-center" style="color: ${primaryC}"><i data-lucide="award" class="w-6 h-6"></i></div>`;
+                bDisplay.innerHTML = ''; lucide.createIcons();
             }
 
             const fDisplay = document.getElementById('display-footer-logos');
-            if (fDisplay) {
-                if (state.footerLogos.length > 0) {
-                    fDisplay.innerHTML = state.footerLogos.map(l => `<img src="${l.src}" class="object-contain" style="height: ${state.footerLogoSize}px; opacity: ${l.opacity}; transition: opacity 0.2s;">`).join('');
-                } else { fDisplay.innerHTML = ''; }
-            }
+            if (state.footerLogos.length > 0) {
+                fDisplay.innerHTML = state.footerLogos.map(l => `<img src="${l.src}" class="object-contain" style="height: ${state.footerLogoSize}px; opacity: ${l.opacity}; transition: opacity 0.2s;">`).join('');
+            } else { fDisplay.innerHTML = ''; }
         }
 
         const canvas = document.getElementById('sig-canvas');
@@ -1316,12 +1369,27 @@
         function resizeCanvas() { 
             const width = canvas.offsetWidth;
             const height = canvas.offsetHeight;
+
             if (width === lastCanvasWidth && height === lastCanvasHeight) return;
-            lastCanvasWidth = width; lastCanvasHeight = height;
+
+            lastCanvasWidth = width;
+            lastCanvasHeight = height;
+
             const ratio = (window.devicePixelRatio || 1) * 3; 
-            canvas.width = width * ratio; canvas.height = height * ratio; 
-            ctx.scale(ratio, ratio); ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 2.5; ctx.strokeStyle = '#000000'; 
-            if (state.signature) { const img = new Image(); img.onload = () => { ctx.drawImage(img, 0, 0, width, height); }; img.src = state.signature; document.getElementById('sig-placeholder').classList.add('hidden'); }
+            canvas.width = width * ratio; 
+            canvas.height = height * ratio; 
+            ctx.scale(ratio, ratio); 
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round'; 
+            ctx.lineWidth = 2.5; ctx.strokeStyle = '#000000'; 
+
+            if (state.signature) {
+                const img = new Image();
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0, width, height);
+                };
+                img.src = state.signature;
+                document.getElementById('sig-placeholder').classList.add('hidden');
+            }
         }
 
         canvas.addEventListener('mousedown', () => { drawing = true; document.getElementById('sig-placeholder').classList.add('hidden'); });
@@ -1335,7 +1403,16 @@
         const stopProp = (e) => e.stopPropagation();
         clearBtn.addEventListener('mousedown', stopProp);
         clearBtn.addEventListener('touchstart', stopProp);
-        clearBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); ctx.clearRect(0, 0, canvas.width, canvas.height); state.signature = null; document.getElementById('sig-placeholder').classList.remove('hidden'); drawing = false; if(state.isBatchMode) renderBatchDOM(); else updateVisuals(); };
+        
+        clearBtn.onclick = (e) => { 
+            e.preventDefault();
+            e.stopPropagation();
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            state.signature = null; 
+            document.getElementById('sig-placeholder').classList.remove('hidden'); 
+            drawing = false; 
+            if(state.isBatchMode) renderBatchDOM(); else updateVisuals(); 
+        };
 
         function handleSignatureUpload(input) {
             if (input.files && input.files[0]) {
@@ -1343,15 +1420,43 @@
                 reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
-                        const tempCanvas = document.createElement('canvas'); const tempCtx = tempCanvas.getContext('2d');
-                        tempCanvas.width = img.width; tempCanvas.height = img.height; tempCtx.drawImage(img, 0, 0);
-                        const imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height); const data = imgData.data; const threshold = 180; 
-                        for (let i = 0; i < data.length; i += 4) { const r = data[i]; const g = data[i + 1]; const b = data[i + 2]; if (r > threshold && g > threshold && b > threshold) { data[i + 3] = 0; } }
-                        tempCtx.putImageData(imgData, 0, 0); ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        const hRatio = canvas.width / img.width; const vRatio = canvas.height / img.height; const ratio = Math.min(hRatio, vRatio); 
-                        const centerShift_x = (canvas.width - img.width * ratio) / 2; const centerShift_y = (canvas.height - img.height * ratio) / 2;
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCanvas.width = img.width;
+                        tempCanvas.height = img.height;
+                        tempCtx.drawImage(img, 0, 0);
+                        
+                        const imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                        const data = imgData.data;
+                        const threshold = 180; 
+                        
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i];
+                            const g = data[i + 1];
+                            const b = data[i + 2];
+                            if (r > threshold && g > threshold && b > threshold) {
+                                data[i + 3] = 0; 
+                            }
+                        }
+                        
+                        tempCtx.putImageData(imgData, 0, 0);
+                        ctx.save();
+                        ctx.setTransform(1, 0, 0, 1, 0, 0);
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        
+                        const hRatio = canvas.width / img.width;
+                        const vRatio = canvas.height / img.height;
+                        const ratio = Math.min(hRatio, vRatio); 
+                        const centerShift_x = (canvas.width - img.width * ratio) / 2;
+                        const centerShift_y = (canvas.height - img.height * ratio) / 2;
+                        
                         ctx.drawImage(tempCanvas, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
-                        state.signature = canvas.toDataURL('image/png', 1.0); ctx.restore(); lastCanvasWidth = 0; resizeCanvas(); document.getElementById('sig-placeholder').classList.add('hidden'); if(state.isBatchMode) renderBatchDOM(); else updateVisuals();
+                        state.signature = canvas.toDataURL('image/png', 1.0);
+                        ctx.restore();
+                        lastCanvasWidth = 0; 
+                        resizeCanvas(); 
+                        document.getElementById('sig-placeholder').classList.add('hidden');
+                        if(state.isBatchMode) renderBatchDOM(); else updateVisuals();
                     }
                     img.src = e.target.result;
                 }
@@ -1364,17 +1469,44 @@
             const container = document.getElementById('preview-area-wrapper');
             const inner = document.getElementById('preview-inner');
             const batchContainer = document.getElementById('batch-container');
+            
             if (!container) return;
+            
             const target = state.isBatchMode ? batchContainer : inner;
             if(!target || target.classList.contains('hidden')) return;
-            const availableWidth = container.offsetWidth - 40; const availableHeight = container.offsetHeight - 40; const certWidth = 1122; const certHeight = 793;
+
+            const availableWidth = container.offsetWidth - 40; 
+            const availableHeight = container.offsetHeight - 40;
+            const certWidth = 1122;
+            const certHeight = 793;
+
             let scale;
-            if (window.innerWidth < 1024) { scale = Math.min(availableWidth / certWidth, 0.85); target.style.padding = "20px"; target.style.gap = "20px"; } 
-            else { if (state.layout === 'side' && !state.isBatchMode) { scale = Math.min(availableWidth / (certWidth * 2.1), 0.7); } else { scale = Math.min(availableWidth / certWidth, availableHeight / certHeight, 0.7); } }
-            if (scale < 0.15) scale = 0.15; target.style.transform = `scale(${scale})`; resizeCanvas();
+
+            if (window.innerWidth < 1024) {
+                scale = Math.min(availableWidth / certWidth, 0.85); 
+                target.style.padding = "20px";
+                target.style.gap = "20px";
+            } else {
+                if (state.layout === 'side' && !state.isBatchMode) {
+                    scale = Math.min(availableWidth / (certWidth * 2.1), 0.7);
+                } else {
+                    scale = Math.min(availableWidth / certWidth, availableHeight / certHeight, 0.7);
+                }
+            }
+            
+            if (scale < 0.15) scale = 0.15;
+            target.style.transform = `scale(${scale})`;
+            resizeCanvas();
         }
 
-        window.onload = () => { getDeviceId(); updateLicenseUI(); lucide.createIcons(); renderSelectorUI(); renderInputs(); resizeCanvas(); updateVisuals(); window.addEventListener('resize', autoResizePreview); autoResizePreview(); setTimeout(autoResizePreview, 500); };
+        window.onload = () => {
+            getDeviceId(); updateLicenseUI();
+            lucide.createIcons(); renderSelectorUI(); renderInputs(); 
+            resizeCanvas(); updateVisuals();
+            window.addEventListener('resize', autoResizePreview);
+            autoResizePreview();
+            setTimeout(autoResizePreview, 500);
+        };
     </script>
 </body>
 </html>
