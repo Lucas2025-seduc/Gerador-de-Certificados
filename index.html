@@ -201,14 +201,16 @@
     <!-- MAIN CONTAINER -->
     <div id="main-container" class="flex flex-col lg:flex-row min-h-screen lg:h-screen w-full">
         
-        <!-- Sidebar: Editor -->
+        <!-- Sidebar: Editor (PRIMEIRO NO CÓDIGO para ficar no topo no celular) -->
         <aside id="sidebar" class="w-full lg:w-[450px] xl:w-[480px] bg-slate-900 shadow-2xl z-30 lg:overflow-y-auto p-4 md:p-6 safe-top-padding no-print border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col shrink-0 custom-scroll lg:h-full relative order-1">
             <div class="flex-1 space-y-6 pb-20 lg:pb-0">
                 <!-- Cabeçalho da App -->
                 <div class="flex items-center gap-3 mb-4 pt-2 lg:pt-0">
                     <div class="w-24 h-24 rounded-xl overflow-hidden shadow-lg shadow-blue-500/20 bg-slate-950 border border-slate-800 shrink-0">
-                        <!-- LOGO DO APP AQUI -->
-                        <img src="https://placehold.co/400x400/0f172a/3b82f6?text=NEXUS" alt="Logo Nexus" class="w-full h-full object-cover">
+                        <!-- LOGO DO APP ATUALIZADO -->
+                        <!-- O sistema agora buscará exatamente por "image_c61754.jpg" na mesma pasta -->
+                        <!-- Adicionei um onerror para mostrar um ícone caso a imagem não seja encontrada -->
+                        <img src="image_c61754.jpg" alt="Logo Nexus" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/400x400/0f172a/3b82f6?text=LOGO'">
                     </div>
                     <div>
                         <h1 class="text-lg font-black text-white italic tracking-tighter uppercase leading-none">
@@ -1041,7 +1043,6 @@
                         <div class="absolute inset-4 border-[2.5px]" style="border-color: ${primaryC}"></div>
                     </div>
 
-                    <!-- CORREÇÃO LOTE: Adicionado pb-6 aqui também -->
                     <div class="absolute inset-[50px] flex flex-col items-center text-center box-border z-30 pt-6 pb-6">
                         <header class="w-full shrink-0 flex flex-col items-center gap-2">
                             <div class="flex flex-wrap items-center justify-center gap-8 w-full min-h-[40px] overflow-visible">${hLogosHTML}</div>
@@ -1072,16 +1073,14 @@
                         <div class="flex-1 min-h-[20px]"></div>
 
                         <footer class="w-full shrink-0 flex flex-col items-center">
-                            <div class="flex items-center justify-center gap-2 text-sm font-black opacity-80 mb-6 border-y border-black/5 py-1 uppercase tracking-[0.2em] w-full max-w-[500px]">
+                            <div class="flex items-center justify-center gap-2 text-sm font-black opacity-80 mb-2 border-y border-black/5 py-1 uppercase tracking-[0.2em] w-full max-w-[500px]">
                                <i data-lucide="map-pin" class="w-4 h-4"></i>
                                <span>${d.location}, EM ${d.date}</span>
                             </div>
-                            
-                            <!-- CORREÇÃO LOTE: mb-6 reduzido para mb-2 -->
                             <div class="flex flex-col items-center w-full border-t border-slate-500/10 pt-1 mb-2">
                                 <div class="flex flex-col items-center w-full max-w-[320px]">
-                                    <div class="h-16 w-full flex items-end justify-center relative mb-1">
-                                        ${state.signature ? `<img class="max-h-16 h-auto absolute bottom-0.5 contrast-125 brightness-50 object-contain z-10" src="${state.signature}" style="${sigFilter}">` : ''}
+                                    <div class="h-12 w-full flex items-end justify-center relative mb-1">
+                                        ${state.signature ? `<img class="max-h-12 h-auto absolute bottom-0.5 contrast-125 brightness-50 object-contain z-10" src="${state.signature}" style="${sigFilter}">` : ''}
                                         <div class="w-full h-[1.5px] transition-colors z-20" style="background-color: ${sigLineColor}"></div>
                                     </div>
                                     <p class="text-sm font-black uppercase m-0 leading-none text-center">${d.instructor}</p>
