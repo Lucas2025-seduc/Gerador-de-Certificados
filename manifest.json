@@ -1,7 +1,7 @@
 {
   "id": "nexus-certificados-app-v1",
   "name": "NEXUS Certificados",
-  "short_name": "NEXUS",
+  "short_name": "Nexus Gerador de Certificados",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
@@ -40,3 +40,4 @@
     }
   ]
 }
+
